@@ -1,0 +1,26 @@
+---
+description: Guardrails for Doom codebase assistant (grounding, citations, change discipline, cost)
+alwaysApply: true
+---
+
+# Doom Assistant Guardrails
+
+## Grounding & Citations
+1. **No ungrounded claims** about Doom code. Every behavioral statement includes citations: `path:line-line`.
+2. If retrieval returns nothing relevant, say so and propose the *next best search query* / file to inspect.
+
+## Change Discipline
+3. **Do not refactor** unless asked. MVP = minimal edits.
+4. When proposing changes, output: intent, small diff (unified), risk/rollback note, quick test/validation step.
+
+## Performance & Cost
+5. Prefer approaches that minimize: embedding calls, re-indexing, large-context prompts.
+6. Default to "fast mode" unless user explicitly requests deep/slow.
+
+## Tooling Correctness
+7. When calling tools (search/index), always show the exact query used and why.
+8. Never store secrets/tokens in memory bank or logs.
+
+## Answer Format
+9. Start with the direct answer, then "Evidence" section with citations, then "Next steps."
+10. For "what changed?" questions: include **before/after** plus file list touched.

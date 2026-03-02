@@ -1,0 +1,27 @@
+---
+description: Project truths for Doom codebase assistant (MVP context, architecture, scope, quality bar)
+alwaysApply: true
+---
+
+# Memory Bank (Project Truths)
+
+## Context
+- **MVP**: Interactive code assistant for the Doom codebase (expandable later)
+- **Constraints**: $0 monthly, optimize for lowest cost, US-only if it affects anything, small team, 2-day MVP
+- **Default UX**: Interactive answers; "take your time" enables slower/deeper mode
+
+## Architecture
+- **Pipeline**: ingest → chunk/code-aware parse → embed → index → retrieve → answer w/ citations
+- **Retrieval**: Hybrid (lexical + vector) if available; otherwise vector + lightweight keyword fallback
+- **Grounding**: All answers must be grounded in repo content; cite file paths + line ranges
+- **Edits**: Diff suggestions preferred over paste huge files
+
+## Indexing Scope
+- **Source**: Doom (C + asm), static codebase snapshot
+- **Ingest**: ~500 files/day, incremental updates supported
+- **Chunking**: Code-aware (functions/structs), preserve includes/macros context
+
+## Quality Bar
+- Never hallucinate APIs/types/behavior; if unsure, say what's missing and where to look
+- Any claim about code must point to at least one snippet in the repo
+- Prefer minimal, reversible changes (small diffs)
