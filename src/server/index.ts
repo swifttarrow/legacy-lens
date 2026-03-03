@@ -1,5 +1,7 @@
 import "../load-env.js";
 import http from "node:http";
+import path from "node:path";
+import fs from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { retrieve } from "../retrieval/retrieve.js";
 import type { RetrievalProfile } from "../retrieval/retrieve.js";
@@ -58,7 +60,17 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
 
   try {
     const chunks = await retrieve(query, profile);
-    send({ type: "retrieved", count: chunks.length });
+    send({
+      type: "retrieved",
+      count: chunks.length,
+      chunks: chunks.map(c => ({
+        file_path: c.file_path,
+        symbol_name: c.symbol_name,
+        start_line: c.start_line,
+        end_line: c.end_line,
+        score: c.score,
+      })),
+    });
 
     for await (const token of answerStream(query, chunks)) {
       send({ type: "token", text: token });
@@ -72,6 +84,49 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
   res.end();
 }
 
+async function handleFile(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const rawUrl = req.url ?? "/";
+  const parsedUrl = new URL(rawUrl, "http://localhost");
+  const filePath = parsedUrl.searchParams.get("path");
+
+  if (!filePath) {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "path is required" }));
+    return;
+  }
+
+  const doomDir = process.env.DOOM_REPO_DIR;
+  if (!doomDir) {
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "DOOM_REPO_DIR is not set" }));
+    return;
+  }
+
+  const base = path.resolve(doomDir);
+  const target = path.resolve(base, filePath);
+
+  // Prevent directory traversal: target must be strictly inside base
+  if (!target.startsWith(base + path.sep)) {
+    res.writeHead(403, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "access denied" }));
+    return;
+  }
+
+  try {
+    const content = await fs.readFile(target, "utf-8");
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end(content);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "file not found" }));
+    } else {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "failed to read file" }));
+    }
+  }
+}
+
 function setCors(res: ServerResponse): void {
   res.setHeader("Access-Control-Allow-Origin", "*");
 }
@@ -79,6 +134,7 @@ function setCors(res: ServerResponse): void {
 const server = http.createServer(async (req, res) => {
   const url = req.url ?? "/";
   const method = req.method ?? "GET";
+  const urlPath = url.split("?")[0];
 
   setCors(res);
 
@@ -91,14 +147,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === "GET" && url === "/") {
+  if (method === "GET" && urlPath === "/") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(HTML_PAGE);
     return;
   }
 
-  if (method === "POST" && url === "/api/ask") {
+  if (method === "POST" && urlPath === "/api/ask") {
     await handleAsk(req, res);
+    return;
+  }
+
+  if (method === "GET" && urlPath === "/api/file") {
+    await handleFile(req, res);
     return;
   }
 
