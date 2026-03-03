@@ -1,0 +1,14 @@
+[build]
+buildCommand = "pnpm install && pnpm exec tsc"
+
+[deploy]
+startCommand = "node dist/server/index.js"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+# Required environment variables (set in Railway dashboard):
+#   DATABASE_URL   — Railway Postgres connection string
+#   OPENAI_API_KEY — OpenAI API key
+# PORT is set automatically by Railway.
