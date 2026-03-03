@@ -43,6 +43,7 @@ const CREATE_SEARCH_INDEXES = [
 
 
 export async function migrate(pool: Pool): Promise<void> {
+  await pool.query(`CREATE EXTENSION IF NOT EXISTS vector`);
   await pool.query(CREATE_CHUNKS_TABLE);
   for (const idx of CREATE_INDEXES) {
     await pool.query(idx);
