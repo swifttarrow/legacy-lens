@@ -6,8 +6,11 @@
   "scripts": {
     "doom:sync": "tsx src/cli/doom-sync.ts",
     "db:check": "tsx src/cli/db-check.ts",
+    "db:migrate": "tsx src/cli/db-migrate.ts",
     "ingest:chunks": "tsx src/cli/ingest-chunks.ts",
-    "ingest:embed": "tsx src/cli/ingest-embed.ts"
+    "ingest:embed": "tsx src/cli/ingest-embed.ts",
+    "retrieve": "tsx src/cli/retrieve.ts",
+    "test:retrieval": "tsx tests/test-retrieval.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

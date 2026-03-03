@@ -1,0 +1,17 @@
+[
+  {
+    "query": "Where is the rendering loop implemented?",
+    "expected_symbols": ["R_RenderPlayerView"],
+    "expected_files": ["r_main.c"]
+  },
+  {
+    "query": "How does player movement work?",
+    "expected_symbols": ["P_MovePlayer", "P_PlayerThink"],
+    "expected_files": []
+  },
+  {
+    "query": "Where is weapon firing handled?",
+    "expected_symbols": ["P_FireWeapon", "A_FirePistol", "A_FireShotgun"],
+    "expected_files": []
+  }
+]
