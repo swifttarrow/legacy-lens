@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../load-env.js";
 import { checkConnection, getPool } from "../db/client.js";
 
 await checkConnection();

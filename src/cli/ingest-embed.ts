@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../load-env.js";
 import { getPool } from "../db/client.js";
 import { migrate } from "../db/migrate.js";
 import {

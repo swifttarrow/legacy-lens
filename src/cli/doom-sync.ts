@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "../load-env.js";
 import { syncDoom } from "../doom/sync.js";
 
 syncDoom();
