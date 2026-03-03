@@ -25,7 +25,7 @@ export async function ftsSearch(
   try {
     // First pass: strict AND semantics
     const strictResult = await pool.query<FtsRow>(
-      `SELECT id, file_path, symbol_name, symbol_type, start_line, end_line,
+      `SELECT id, file_path, symbol_name, symbol_type, start_line, end_line, content,
               ts_rank(${TSVEC}, websearch_to_tsquery('english', $1)) AS rank,
               0 AS score
        FROM chunks
@@ -40,7 +40,7 @@ export async function ftsSearch(
 
     // Second pass: relaxed OR semantics (fills in when AND matches too little)
     const relaxedResult = await pool.query<FtsRow>(
-      `SELECT id, file_path, symbol_name, symbol_type, start_line, end_line,
+      `SELECT id, file_path, symbol_name, symbol_type, start_line, end_line, content,
               ts_rank(${TSVEC}, ${RELAXED_TSQUERY}) AS rank,
               0 AS score
        FROM chunks

@@ -5,5 +5,6 @@ export interface RetrievedChunk {
   symbol_type: string;
   start_line: number;
   end_line: number;
+  content: string;
   score: number;
 }

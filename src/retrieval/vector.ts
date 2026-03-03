@@ -12,7 +12,7 @@ export async function vectorSearch(
 ): Promise<VectorRow[]> {
   const vectorStr = `[${embedding.join(",")}]`;
   const result = await pool.query<VectorRow>(
-    `SELECT id, file_path, symbol_name, symbol_type, start_line, end_line,
+    `SELECT id, file_path, symbol_name, symbol_type, start_line, end_line, content,
             1 - (embedding <=> $1::vector) AS similarity,
             0 AS score
      FROM chunks
