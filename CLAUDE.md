@@ -7,7 +7,6 @@ Stack:
 - TypeScript (Node)
 - Postgres + pgvector
 - tree-sitter for parsing
-- LangGraph for orchestration
 - OpenAI API for embeddings + chat
 
 ## Constraints
