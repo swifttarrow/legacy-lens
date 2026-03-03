@@ -23,7 +23,7 @@ Environment variables:
 - DOOM_REPO_REF  
 - DOOM_REPO_DIR (default: ../doom — sibling to legacy-lens)
 
-Example `.env`:
+Example `.env.local` (copy from `.env.example`):
 
 DOOM_REPO_URL=https://github.com/id-Software/DOOM.git  
 DOOM_REPO_REF=master  
@@ -84,7 +84,7 @@ You must also:
 - src/db/client.ts
 - src/doom/sync.ts
 - src/cli/doom-sync.ts
-- .env.example
+- .env.example (copy to .env.local)
 
 ---
 
