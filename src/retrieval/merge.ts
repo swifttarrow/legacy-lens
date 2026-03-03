@@ -13,10 +13,15 @@ export function mergeAndRerank(
 ): RetrievedChunk[] {
   const scores = new Map<number, { chunk: RetrievedChunk; score: number }>();
 
-  // RRF from FTS results
+  // RRF from FTS results (accumulate when chunk appears in multiple variants)
   ftsResults.forEach((row, rank) => {
-    const score = 1 / (RRF_K + rank + 1);
-    scores.set(row.id, { chunk: row, score });
+    const ftsScore = 1 / (RRF_K + rank + 1);
+    const existing = scores.get(row.id);
+    if (existing) {
+      existing.score += ftsScore;
+    } else {
+      scores.set(row.id, { chunk: row, score: ftsScore });
+    }
   });
 
   // RRF from vector results, accumulating if chunk already seen

@@ -10,7 +10,8 @@
     "ingest:chunks": "tsx src/cli/ingest-chunks.ts",
     "ingest:embed": "tsx src/cli/ingest-embed.ts",
     "retrieve": "tsx src/cli/retrieve.ts",
-    "test:retrieval": "tsx tests/test-retrieval.ts"
+    "test:retrieval": "tsx tests/test-retrieval.ts",
+    "test:expand": "tsx tests/expand.test.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
