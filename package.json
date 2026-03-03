@@ -6,10 +6,12 @@
   "scripts": {
     "doom:sync": "tsx src/cli/doom-sync.ts",
     "db:check": "tsx src/cli/db-check.ts",
-    "ingest:chunks": "tsx src/cli/ingest-chunks.ts"
+    "ingest:chunks": "tsx src/cli/ingest-chunks.ts",
+    "ingest:embed": "tsx src/cli/ingest-embed.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
+    "openai": "^4.78.0",
     "pg": "^8.13.0",
     "tree-sitter": "^0.21.1",
     "tree-sitter-c": "^0.21.4"

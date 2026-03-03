@@ -20,10 +20,16 @@ const CREATE_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_chunks_file_symbol ON chunks (file_path, symbol_type)`,
 ];
 
+const ADD_EMBEDDING_COLUMN = `
+  ALTER TABLE chunks
+  ADD COLUMN IF NOT EXISTS embedding vector(1536)
+`;
+
 export async function migrate(pool: Pool): Promise<void> {
   await pool.query(CREATE_CHUNKS_TABLE);
   for (const idx of CREATE_INDEXES) {
     await pool.query(idx);
   }
+  await pool.query(ADD_EMBEDDING_COLUMN);
   console.log("Migration OK");
 }
