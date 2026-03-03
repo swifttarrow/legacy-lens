@@ -12,7 +12,8 @@
     "retrieve": "tsx src/cli/retrieve.ts",
     "test:retrieval": "tsx tests/test-retrieval.ts",
     "test:expand": "tsx tests/expand.test.ts",
-    "ask": "tsx src/cli/ask.ts"
+    "ask": "tsx src/cli/ask.ts",
+    "diff": "tsx src/cli/diff.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
