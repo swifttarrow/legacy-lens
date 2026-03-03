@@ -9,3 +9,7 @@ M4 — LLM answers + citations + streaming
 M5 — Diff output (existing files only)
 M6 — Minimal UI (profile toggle selects retrieval mode)
 M7 — Railway deployment + manual ingest into Railway Postgres
+M8 — Query interface enhancements (syntax highlighting, relevance scores, drill-down to full file)
+M9 — Code understanding features (4+ from REQUIREMENTS)
+M10 — Submission docs (Pre-Search, RAG Architecture, AI Cost analysis)
+M11 — Diff in UI
