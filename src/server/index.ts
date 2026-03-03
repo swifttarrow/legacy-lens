@@ -7,9 +7,18 @@ import { z } from "zod";
 import { retrieve } from "../retrieval/retrieve.js";
 import type { RetrievalProfile } from "../retrieval/retrieve.js";
 import { answerStream } from "../llm/answer.js";
+import { generateDiff } from "../llm/diff.js";
 import { VALID_MODES } from "../llm/prompts.js";
 import type { AnswerMode } from "../llm/prompts.js";
 import { HTML_PAGE } from "./html.js";
+
+const DiffSchema = z.object({
+  query: z
+    .string()
+    .transform((s) => s.trim())
+    .refine((s) => s.length >= 1, "query is required"),
+  profile: z.enum(["interactive", "deep"]).default("interactive"),
+});
 
 const AskSchema = z.object({
   query: z
@@ -101,6 +110,51 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
   res.end();
 }
 
+async function handleDiff(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  let body: string;
+  try {
+    body = await readBody(req);
+  } catch {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "failed to read request body" }));
+    return;
+  }
+
+  let query: string;
+  let profile: RetrievalProfile;
+  try {
+    const parsed = JSON.parse(body) as unknown;
+    const result = DiffSchema.safeParse(parsed);
+    if (!result.success) {
+      const msg = result.error.errors.map((e) => e.message).join("; ");
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: msg }));
+      return;
+    }
+    query = result.data.query;
+    profile = result.data.profile;
+  } catch {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "invalid JSON" }));
+    return;
+  }
+
+  try {
+    const chunks = await retrieve(query, profile);
+    const result = await generateDiff(query, chunks);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    if (result.startsWith("# CANNOT_DIFF")) {
+      const reason = result.replace(/^# CANNOT_DIFF:\s*/i, "").trim();
+      res.end(JSON.stringify({ error: reason }));
+    } else {
+      res.end(JSON.stringify({ diff: result, file_path: chunks[0].file_path }));
+    }
+  } catch (err) {
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+  }
+}
+
 async function handleFile(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const rawUrl = req.url ?? "/";
   const parsedUrl = new URL(rawUrl, "http://localhost");
@@ -172,6 +226,11 @@ const server = http.createServer(async (req, res) => {
 
   if (method === "POST" && urlPath === "/api/ask") {
     await handleAsk(req, res);
+    return;
+  }
+
+  if (method === "POST" && urlPath === "/api/diff") {
+    await handleDiff(req, res);
     return;
   }
 

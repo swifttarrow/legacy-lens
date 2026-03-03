@@ -60,6 +60,18 @@ export const HTML_PAGE = `<!DOCTYPE html>
     a.citation { color: #f90; font-family: monospace; font-size: 12px; text-decoration: none; border-bottom: 1px dashed #f90; white-space: nowrap; cursor: pointer; }
     a.citation:hover { color: #fc0; border-bottom-color: #fc0; }
 
+    /* Diff output */
+    #diff-output { display: none; }
+    #diff-output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    #diff-output-label { font-size: 12px; color: #666; font-family: monospace; }
+    #copy-btn { padding: 4px 14px; font-size: 12px; background: #2a2a2a; color: #aaa; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-weight: normal; }
+    #copy-btn:hover { color: #ddd; border-color: #666; }
+    #diff-pre { background: #161616; border: 1px solid #2a2a2a; border-radius: 4px; padding: 12px; overflow-x: auto; margin: 0; font-family: monospace; font-size: 12px; line-height: 1.55; white-space: pre; }
+    .diff-add  { color: #5f5; }
+    .diff-del  { color: #f55; }
+    .diff-hunk { color: #5cf; }
+    .diff-meta { color: #888; }
+
     /* File modal */
     #file-modal { display: none; position: fixed; inset: 0; z-index: 100; }
     #file-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.75); }
@@ -77,12 +89,17 @@ export const HTML_PAGE = `<!DOCTYPE html>
   <p class="subtitle">Ask questions about the original Doom (1993) C source code.</p>
 
   <div class="controls">
-    <span style="font-size:13px;color:#888">Retrieval:</span>
+    <span style="font-size:13px;color:#888">Task:</span>
+    <div class="toggle-group">
+      <label><input type="radio" name="task" value="ask" checked><span>Ask</span></label>
+      <label><input type="radio" name="task" value="diff"><span>Suggest change</span></label>
+    </div>
+    <span style="font-size:13px;color:#888;margin-left:8px">Retrieval:</span>
     <div class="toggle-group">
       <label><input type="radio" name="profile" value="interactive" checked><span>Interactive</span></label>
       <label><input type="radio" name="profile" value="deep"><span>Deep</span></label>
     </div>
-    <span style="font-size:13px;color:#888;margin-left:8px">Analysis:</span>
+    <span id="analysis-label" style="font-size:13px;color:#888;margin-left:8px">Analysis:</span>
     <select id="mode-select">
       ${MODE_OPTIONS_HTML}
     </select>
@@ -95,6 +112,14 @@ export const HTML_PAGE = `<!DOCTYPE html>
       <button type="button" id="clear-btn">Clear</button>
     </div>
   </form>
+
+  <div id="diff-output">
+    <div id="diff-output-header">
+      <span id="diff-output-label">Unified diff</span>
+      <button id="copy-btn" type="button">Copy</button>
+    </div>
+    <pre id="diff-pre"></pre>
+  </div>
 
   <div id="status"></div>
 
@@ -133,10 +158,40 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const chunksCount  = document.getElementById('chunks-count');
     const chunksList   = document.getElementById('chunks-list');
     const modeSelect     = document.getElementById('mode-select');
+    const analysisLabel  = document.getElementById('analysis-label');
+    const diffOutput     = document.getElementById('diff-output');
+    const diffOutputLabel = document.getElementById('diff-output-label');
+    const diffPre        = document.getElementById('diff-pre');
+    const copyBtn        = document.getElementById('copy-btn');
     const fileModal      = document.getElementById('file-modal');
     const fileModalTitle = document.getElementById('file-modal-title');
     const fileModalPre   = document.getElementById('file-modal-pre');
     const fileModalCode  = document.getElementById('file-modal-code');
+
+    // ── Task toggle (Ask ↔ Suggest change) ────────────────────────────────────
+    function getTask() {
+      return document.querySelector('input[name=task]:checked').value;
+    }
+
+    document.querySelectorAll('input[name=task]').forEach((radio) => {
+      radio.addEventListener('change', () => {
+        const isDiff = getTask() === 'diff';
+        modeSelect.style.display   = isDiff ? 'none' : '';
+        analysisLabel.style.display = isDiff ? 'none' : '';
+        queryEl.placeholder = isDiff
+          ? 'e.g. Add a comment above P_DamageMobj explaining the damage formula'
+          : 'e.g. Where is the rendering loop? How does the player move?';
+        submitBtn.textContent = isDiff ? 'Generate diff' : 'Ask';
+        // Reset output on task switch
+        outputEl.innerHTML = '';
+        diffOutput.style.display = 'none';
+        diffOutputLabel.textContent = 'Unified diff';
+        diffPre.innerHTML = '';
+        statusEl.textContent = '';
+        chunksPanel.style.display = 'none';
+        chunksList.innerHTML = '';
+      });
+    });
 
     // ── Clear ──────────────────────────────────────────────────────────────────
     clearBtn.addEventListener('click', () => {
@@ -145,6 +200,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
       queryEl.value = '';
       chunksPanel.style.display = 'none';
       chunksList.innerHTML = '';
+      diffOutput.style.display = 'none';
+      diffOutputLabel.textContent = 'Unified diff';
+      diffPre.innerHTML = '';
     });
 
     // ── Ctrl/Cmd+Enter to submit ───────────────────────────────────────────────
@@ -155,6 +213,38 @@ export const HTML_PAGE = `<!DOCTYPE html>
       }
     });
 
+    // ── Diff submit handler ────────────────────────────────────────────────────
+    async function submitDiff(query, profile) {
+      submitBtn.disabled = true;
+      statusEl.textContent = 'Retrieving and generating diff\\u2026';
+      diffOutput.style.display = 'none';
+      diffPre.innerHTML = '';
+      outputEl.innerHTML = '';
+      chunksPanel.style.display = 'none';
+      chunksList.innerHTML = '';
+
+      try {
+        const resp = await fetch('/api/diff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, profile }),
+        });
+        const data = await resp.json();
+        if (data.error) {
+          statusEl.textContent = 'Cannot generate diff: ' + data.error;
+        } else {
+          statusEl.textContent = 'Done';
+          diffOutputLabel.textContent = data.file_path ? 'Unified diff: ' + data.file_path : 'Unified diff';
+          diffPre.innerHTML = renderDiff(data.diff);
+          diffOutput.style.display = '';
+        }
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + (err.message || String(err));
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
     // ── Main submit handler ────────────────────────────────────────────────────
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -162,11 +252,18 @@ export const HTML_PAGE = `<!DOCTYPE html>
       if (!query) return;
 
       const profile = document.querySelector('input[name=profile]:checked').value;
+
+      if (getTask() === 'diff') {
+        await submitDiff(query, profile);
+        return;
+      }
+
       const mode    = modeSelect.value;
 
       submitBtn.disabled = true;
       statusEl.textContent = 'Retrieving chunks\\u2026';
       outputEl.innerHTML = '<pre id="stream-pre" style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit"></pre>';
+      diffOutput.style.display = 'none';
       chunksPanel.style.display = 'none';
       chunksList.innerHTML = '';
       const pre = document.getElementById('stream-pre');
@@ -315,6 +412,32 @@ export const HTML_PAGE = `<!DOCTYPE html>
       // Italic
       s = s.replace(/(?<!\\*)\\*(?!\\*)(.+?)(?<!\\*)\\*(?!\\*)/g, '<em>$1</em>');
       return s;
+    }
+
+    // ── Copy diff to clipboard ────────────────────────────────────────────────
+    copyBtn.addEventListener('click', () => {
+      const text = diffPre.textContent || '';
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+      }).catch(() => {
+        copyBtn.textContent = 'Failed';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+      });
+    });
+
+    // ── Diff renderer ─────────────────────────────────────────────────────────
+    function renderDiff(text) {
+      return text.split('\\n').map((line) => {
+        let cls = '';
+        if (line.startsWith('+++') || line.startsWith('---')) cls = 'diff-meta';
+        else if (line.startsWith('@@'))  cls = 'diff-hunk';
+        else if (line.startsWith('+'))   cls = 'diff-add';
+        else if (line.startsWith('-'))   cls = 'diff-del';
+        // else: context line (starts with space) or empty — no class
+        const escaped = escHtml(line);
+        return cls ? '<span class="' + cls + '">' + escaped + '</span>' : escaped;
+      }).join('\\n');
     }
 
     // ── Block markdown renderer ───────────────────────────────────────────────
