@@ -7,7 +7,6 @@
     "outDir": "dist",
     "rootDir": "src",
     "esModuleInterop": true,
-    "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
   "include": ["src/**/*"],
