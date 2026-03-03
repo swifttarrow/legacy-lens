@@ -6,6 +6,7 @@ Set up the local development environment and establish a deterministic, pinned D
 
 The Doom source must:
 - Be cloned locally (not a submodule)
+- Live **outside** the legacy-lens repo (sibling directory)
 - Be pinned to a specific commit or tag
 - Be synced manually via a CLI command
 - Never auto-update during ingestion
@@ -20,13 +21,13 @@ Environment variables:
 
 - DOOM_REPO_URL  
 - DOOM_REPO_REF  
-- DOOM_REPO_DIR (default: ./vendor/doom)
+- DOOM_REPO_DIR (default: ../doom — sibling to legacy-lens)
 
 Example `.env`:
 
 DOOM_REPO_URL=https://github.com/id-Software/DOOM.git  
 DOOM_REPO_REF=master  
-DOOM_REPO_DIR=./vendor/doom  
+DOOM_REPO_DIR=../doom  
 
 (You may replace `master` with a specific commit hash for reproducibility.)
 
@@ -58,7 +59,7 @@ You must also:
 
 - Set up Postgres via Docker
 - Enable pgvector extension
-- Confirm database connectivity from TypeScript
+- Confirm database connectivity and pgvector from TypeScript (`pnpm db:check`)
 
 ---
 
@@ -68,9 +69,9 @@ You must also:
 2. pgvector extension is enabled
 3. TypeScript app connects to Postgres successfully
 4. `pnpm doom:sync` clones and checks out the pinned Doom repo
-5. Running:
+5. Running (from legacy-lens root):
 
-   cd vendor/doom  
+   cd ../doom  
    git rev-parse HEAD  
 
    prints the exact commit matching DOOM_REPO_REF
@@ -104,15 +105,17 @@ docker ps
 
 Then:
 
-psql -c "CREATE EXTENSION vector;"
+pnpm db:check  
+
+(Confirms connectivity and pgvector extension.)
 
 Then:
 
 pnpm doom:sync  
 
-Then:
+Then (from legacy-lens root):
 
-cd vendor/doom  
+cd ../doom  
 git rev-parse HEAD  
 
 The printed commit must match DOOM_REPO_REF.
