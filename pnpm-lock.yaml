@@ -13,7 +13,7 @@ importers:
         version: 16.6.1
       openai:
         specifier: ^4.78.0
-        version: 4.104.0
+        version: 4.104.0(zod@3.25.76)
       pg:
         specifier: ^8.13.0
         version: 8.19.0
@@ -23,6 +23,9 @@ importers:
       tree-sitter-c:
         specifier: ^0.21.4
         version: 0.21.4(tree-sitter@0.21.1)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -463,6 +466,9 @@ packages:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
 snapshots:
 
   '@esbuild/aix-ppc64@0.27.3':
@@ -715,7 +721,7 @@ snapshots:
 
   node-gyp-build@4.8.4: {}
 
-  openai@4.104.0:
+  openai@4.104.0(zod@3.25.76):
     dependencies:
       '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
@@ -724,6 +730,8 @@ snapshots:
       form-data-encoder: 1.7.2
       formdata-node: 4.4.1
       node-fetch: 2.7.0
+    optionalDependencies:
+      zod: 3.25.76
     transitivePeerDependencies:
       - encoding
 
@@ -812,3 +820,5 @@ snapshots:
       webidl-conversions: 3.0.1
 
   xtend@4.0.2: {}
+
+  zod@3.25.76: {}

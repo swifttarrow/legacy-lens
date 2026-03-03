@@ -3,10 +3,24 @@ import http from "node:http";
 import path from "node:path";
 import fs from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { z } from "zod";
 import { retrieve } from "../retrieval/retrieve.js";
 import type { RetrievalProfile } from "../retrieval/retrieve.js";
 import { answerStream } from "../llm/answer.js";
+import { VALID_MODES } from "../llm/prompts.js";
+import type { AnswerMode } from "../llm/prompts.js";
 import { HTML_PAGE } from "./html.js";
+
+const AskSchema = z.object({
+  query: z
+    .string()
+    .transform((s) => s.trim())
+    .refine((s) => s.length >= 1, "query is required"),
+  profile: z.enum(["interactive", "deep"]).default("interactive"),
+  mode: z
+    .enum(VALID_MODES as [AnswerMode, ...AnswerMode[]])
+    .default("explain"),
+});
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 
@@ -31,19 +45,22 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
 
   let query: string;
   let profile: RetrievalProfile;
+  let mode: AnswerMode;
   try {
-    const parsed = JSON.parse(body) as { query?: unknown; profile?: unknown };
-    query = (typeof parsed.query === "string" ? parsed.query : "").trim();
-    profile = parsed.profile === "deep" ? "deep" : "interactive";
+    const parsed = JSON.parse(body) as unknown;
+    const result = AskSchema.safeParse(parsed);
+    if (!result.success) {
+      const msg = result.error.errors.map((e) => e.message).join("; ");
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: msg }));
+      return;
+    }
+    query = result.data.query;
+    profile = result.data.profile;
+    mode = result.data.mode;
   } catch {
     res.writeHead(400, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "invalid JSON" }));
-    return;
-  }
-
-  if (!query) {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "query is required" }));
     return;
   }
 
@@ -72,7 +89,7 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
       })),
     });
 
-    for await (const token of answerStream(query, chunks)) {
+    for await (const token of answerStream(query, chunks, mode)) {
       send({ type: "token", text: token });
     }
 

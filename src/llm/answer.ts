@@ -1,21 +1,13 @@
 import OpenAI from "openai";
 import type { RetrievedChunk } from "../retrieval/types.js";
+import { getSystemPrompt } from "./prompts.js";
+import type { AnswerMode } from "./prompts.js";
 
 const CHAT_MODEL = "gpt-4o-mini";
 
 // Truncate very long chunk bodies to keep per-call cost reasonable.
 // gpt-4o-mini has a 128K context window but dense C tables can be huge.
 const MAX_CHUNK_CHARS = 2_000;
-
-const SYSTEM_PROMPT = `\
-You are an expert on the original Doom C source code (linuxdoom-1.10).
-Answer using ONLY the source code excerpts provided below.
-
-Rules:
-- Cite every factual claim using this exact format: \`file_path:start_line-end_line\`
-- Never invent or guess symbol names, file paths, or line numbers not present in the excerpts.
-- If the excerpts do not contain enough information to answer fully, explicitly say so and state what is uncertain.
-- If no excerpts were retrieved, do NOT attempt to answer; instead ask one focused clarifying question to help narrow the search.`;
 
 let _client: OpenAI | null = null;
 
@@ -47,6 +39,7 @@ function buildContext(chunks: RetrievedChunk[]): string {
 export async function* answerStream(
   query: string,
   chunks: RetrievedChunk[],
+  mode: AnswerMode = "explain",
 ): AsyncGenerator<string> {
   const userContent =
     chunks.length === 0
@@ -58,7 +51,7 @@ export async function* answerStream(
   const stream = await getClient().chat.completions.create({
     model: CHAT_MODEL,
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: getSystemPrompt(mode) },
       { role: "user", content: userContent },
     ],
     stream: true,

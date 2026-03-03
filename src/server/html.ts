@@ -1,3 +1,10 @@
+import { VALID_MODES, MODE_LABELS } from "../llm/prompts.js";
+import type { AnswerMode } from "../llm/prompts.js";
+
+const MODE_OPTIONS_HTML = VALID_MODES.map(
+  (m) => `<option value="${m}">${MODE_LABELS[m as AnswerMode]}</option>`
+).join("\n      ");
+
 export const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,6 +30,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
     #submit-btn:disabled { background: #555; color: #888; cursor: not-allowed; }
     #clear-btn { background: #2a2a2a; color: #aaa; border: 1px solid #444; }
     #status { color: #777; font-size: 13px; margin: 10px 0 6px; min-height: 18px; }
+    #mode-select { background: #1a1a1a; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 3px 8px; font-size: 13px; cursor: pointer; }
+    #mode-select:focus { outline: none; border-color: #f60; }
 
     /* Chunks panel */
     #chunks-panel { margin: 0 0 8px; border: 1px solid #2a2a2a; border-radius: 4px; background: #161616; }
@@ -68,11 +77,15 @@ export const HTML_PAGE = `<!DOCTYPE html>
   <p class="subtitle">Ask questions about the original Doom (1993) C source code.</p>
 
   <div class="controls">
-    <span style="font-size:13px;color:#888">Mode:</span>
+    <span style="font-size:13px;color:#888">Retrieval:</span>
     <div class="toggle-group">
       <label><input type="radio" name="profile" value="interactive" checked><span>Interactive</span></label>
       <label><input type="radio" name="profile" value="deep"><span>Deep</span></label>
     </div>
+    <span style="font-size:13px;color:#888;margin-left:8px">Analysis:</span>
+    <select id="mode-select">
+      ${MODE_OPTIONS_HTML}
+    </select>
   </div>
 
   <form id="form">
@@ -119,6 +132,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const chunksPanel  = document.getElementById('chunks-panel');
     const chunksCount  = document.getElementById('chunks-count');
     const chunksList   = document.getElementById('chunks-list');
+    const modeSelect     = document.getElementById('mode-select');
     const fileModal      = document.getElementById('file-modal');
     const fileModalTitle = document.getElementById('file-modal-title');
     const fileModalPre   = document.getElementById('file-modal-pre');
@@ -148,6 +162,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
       if (!query) return;
 
       const profile = document.querySelector('input[name=profile]:checked').value;
+      const mode    = modeSelect.value;
 
       submitBtn.disabled = true;
       statusEl.textContent = 'Retrieving chunks\\u2026';
@@ -161,7 +176,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
         const resp = await fetch('/api/ask', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, profile }),
+          body: JSON.stringify({ query, profile, mode }),
         });
 
         if (!resp.ok || !resp.body) throw new Error('Server returned ' + resp.status);
@@ -191,7 +206,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 fullText += event.text;
                 pre.textContent = fullText;
               } else if (event.type === 'done') {
-                statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ']';
+                statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + ']';
                 outputEl.innerHTML = renderMarkdown(fullText);
                 if (typeof Prism !== 'undefined' && Prism.highlightElement) {
                   outputEl.querySelectorAll('pre code[class*="language-"]').forEach((el) => {
