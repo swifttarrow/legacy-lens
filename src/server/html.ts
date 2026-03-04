@@ -85,11 +85,21 @@ export const HTML_PAGE = `<!DOCTYPE html>
     #file-modal-close:hover { color: #ddd; }
     #file-modal-pre { flex: 1; overflow: auto; margin: 0; border-radius: 0; }
     #file-modal-pre code { display: block; font-size: 12px; line-height: 1.5; }
+
+    /* Doom embed */
+    #doom-embed { margin-bottom: 20px; border: 1px solid #333; border-radius: 6px; overflow: hidden; background: #000; }
+    #doom-embed-label { font-size: 12px; color: #666; padding: 6px 12px; border-bottom: 1px solid #2a2a2a; background: #161616; }
+    #doom-iframe { width: 100%; height: 400px; border: none; display: block; }
   </style>
 </head>
 <body>
   <h1>Legacy Lens</h1>
   <p class="subtitle">Ask questions about the original Doom (1993) C source code.</p>
+
+  <div id="doom-embed">
+    <div id="doom-embed-label">Play Doom (WebPrBoom)</div>
+    <iframe id="doom-iframe" src="https://raz0red.github.io/webprboom" allow="fullscreen" title="Play Doom"></iframe>
+  </div>
 
   <div class="controls">
     <span style="font-size:13px;color:#888">Task:</span>
@@ -355,11 +365,18 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 const elapsedStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
                 statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + '] (' + elapsedStr + ')';
                 assistantBubble.innerHTML = renderMarkdown(fullText);
-                if (typeof Prism !== 'undefined' && Prism.highlightElement) {
-                  assistantBubble.querySelectorAll('pre code[class*="language-"]').forEach((el) => {
-                    Prism.highlightElement(el);
-                  });
-                }
+                // Defer Prism so DOM is fully updated; use highlightAllUnder for container
+                requestAnimationFrame(() => {
+                  if (typeof Prism !== 'undefined') {
+                    if (Prism.highlightAllUnder) {
+                      Prism.highlightAllUnder(assistantBubble);
+                    } else {
+                      assistantBubble.querySelectorAll('pre code[class*="language-"]').forEach((el) => {
+                        if (Prism.highlightElement) Prism.highlightElement(el);
+                      });
+                    }
+                  }
+                });
                 // Citation clicks handled by delegation on threadEl
                 // Append this turn to history for subsequent requests
                 history.push({ role: 'user', content: query });
@@ -516,8 +533,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
         const line = raw.trimEnd();
 
-        // Fenced code block start: \`\`\`c or \`\`\`
-        const fence = line.match(/^\`\`\`(\w*)/);
+        // Fenced code block start: \`\`\`c or \`\`\` (strip leading junk/stray chars from LLM)
+        const fence = line.replace(/^[^\`]*/, '').match(/^\`\`\`(\w*)/);
         if (fence) {
           closeList();
           inCode = true;
