@@ -470,7 +470,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer traces BSP walk → visplane accumulation → wall/sprite drawing → final blit",
-      "latency_ms_max": 10000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -482,7 +482,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer covers P_PlayerThink driving movement, weapon, and view updates each tic",
-      "latency_ms_max": 8000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -494,7 +494,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer covers PTR_ShootTraverse → P_DamageMobj → P_KillMobj → death state",
-      "latency_ms_max": 10000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -506,7 +506,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer explains the tag-based zone allocator with block headers and purging",
-      "latency_ms_max": 4000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -518,7 +518,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer explains the front-to-back BSP traversal and the side test used to pick the near subtree",
-      "latency_ms_max": 4000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -530,7 +530,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer explains linedefs reference two sidedefs which reference sectors, forming the 2D map geometry",
-      "latency_ms_max": 8000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -542,7 +542,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer covers A_Look for target acquisition and A_Chase for movement with threshold-based attack selection",
-      "latency_ms_max": 8000
+      "latency_ms_max": 3000
     }
   },
   {
@@ -554,7 +554,7 @@
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer covers D_DoomLoop driving G_Ticker (game logic) then rendering each tic",
-      "latency_ms_max": 10000
+      "latency_ms_max": 3000
     }
   }
 ]
