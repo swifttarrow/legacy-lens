@@ -356,6 +356,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
               if (event.type === 'retrieved') {
                 statusEl.textContent = 'Retrieved ' + event.count + ' chunk' + (event.count === 1 ? '' : 's') + '. Generating answer\\u2026';
                 renderChunksPanel(event.chunks || [], event.count);
+              } else if (event.type === 'ttft') {
+                const ttftStr = event.ms >= 1000 ? (event.ms / 1000).toFixed(1) + 's' : event.ms + 'ms';
+                statusEl.textContent = 'First token in ' + ttftStr + ' \\u2026';
               } else if (event.type === 'token') {
                 fullText += event.text;
                 streamPre.textContent = fullText;
@@ -363,7 +366,14 @@ export const HTML_PAGE = `<!DOCTYPE html>
               } else if (event.type === 'done') {
                 const elapsedMs = Date.now() - askStartTime;
                 const elapsedStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
-                statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + '] (' + elapsedStr + ')';
+                let statusText = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + ']';
+                if (event.ttftMs != null) {
+                  const ttftStr = event.ttftMs >= 1000 ? (event.ttftMs / 1000).toFixed(1) + 's' : event.ttftMs + 'ms';
+                  statusText += ' (TTFT: ' + ttftStr + ', total: ' + elapsedStr + ')';
+                } else {
+                  statusText += ' (' + elapsedStr + ')';
+                }
+                statusEl.textContent = statusText;
                 assistantBubble.innerHTML = renderMarkdown(fullText);
                 // Defer Prism so DOM is fully updated; use highlightAllUnder for container
                 requestAnimationFrame(() => {

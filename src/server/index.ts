@@ -93,6 +93,8 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
     res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
+  const requestStart = Date.now();
+
   try {
     const chunks = await retrieve(query, profile);
     send({
@@ -107,11 +109,16 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
       })),
     });
 
+    let ttftMs: number | undefined;
     for await (const token of answerStream(query, chunks, mode, history)) {
+      if (ttftMs === undefined) {
+        ttftMs = Date.now() - requestStart;
+        send({ type: "ttft", ms: ttftMs });
+      }
       send({ type: "token", text: token });
     }
 
-    send({ type: "done", chunkCount: chunks.length });
+    send({ type: "done", chunkCount: chunks.length, ttftMs });
   } catch (err) {
     send({ type: "error", message: err instanceof Error ? err.message : String(err) });
   }
