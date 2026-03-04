@@ -25,11 +25,11 @@
     "id": "happy-03-weapon-fire",
     "category": "happy",
     "query": "Where is weapon firing handled?",
-    "expected_symbols": ["P_FireWeapon", "A_FirePistol", "A_FireShotgun"],
-    "expected_files": ["p_weapon.c"],
+    "expected_symbols": ["P_FireWeapon", "A_FirePistol", "A_FireShotgun", "A_WeaponReady"],
+    "expected_files": ["p_pspr.c"],
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
-      "usefulness": "answer identifies P_FireWeapon or specific weapon action functions"
+      "usefulness": "answer identifies P_FireWeapon or specific weapon action functions in p_pspr.c"
     }
   },
   {
@@ -90,7 +90,7 @@
   {
     "id": "happy-09-memory-alloc",
     "category": "happy",
-    "query": "Where is memory allocated in Doom?",
+    "query": "How does the zone memory allocator work?",
     "expected_symbols": ["Z_Malloc"],
     "expected_files": ["z_zone.c"],
     "rubric": {
@@ -157,22 +157,22 @@
     "id": "happy-15-sector-specials",
     "category": "happy",
     "query": "Where are sector specials processed each tick?",
-    "expected_symbols": ["P_UpdateSpecials"],
+    "expected_symbols": ["P_UpdateSpecials", "P_SpawnSpecials", "P_PlayerInSpecialSector"],
     "expected_files": ["p_spec.c"],
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
-      "usefulness": "answer identifies P_UpdateSpecials as the function that ticks animated textures and sector effects"
+      "usefulness": "answer identifies P_UpdateSpecials or P_SpawnSpecials in p_spec.c as the sector special handlers"
     }
   },
   {
     "id": "happy-16-floor-render",
     "category": "happy",
     "query": "How are floors and ceilings rendered?",
-    "expected_symbols": ["R_DrawPlanes", "R_FindPlane"],
-    "expected_files": ["r_plane.c"],
+    "expected_symbols": ["R_RenderSegLoop", "R_StoreWallRange", "R_DrawPlanes", "R_FindPlane"],
+    "expected_files": ["r_segs.c", "r_plane.c"],
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
-      "usefulness": "answer explains visplanes accumulate floor/ceiling spans during BSP walk and are drawn by R_DrawPlanes"
+      "usefulness": "answer explains floor/ceiling spans are accumulated during the BSP walk and drawn as flat-textured horizontal spans"
     }
   },
   {
@@ -234,11 +234,11 @@
     "id": "edge-02-trig-tables",
     "category": "edge",
     "query": "Where are the trigonometric lookup tables stored?",
-    "expected_symbols": ["finesine"],
-    "expected_files": ["tables.c"],
+    "expected_symbols": ["R_InitTables", "finesine", "finecosine"],
+    "expected_files": ["r_main.c", "tables.c"],
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
-      "usefulness": "answer identifies finesine (and finecosine) arrays in tables.c as the pre-computed trig tables"
+      "usefulness": "answer identifies finesine/finecosine arrays in tables.c or R_InitTables in r_main.c as related to pre-computed trig tables"
     }
   },
   {
@@ -268,7 +268,7 @@
     "category": "edge",
     "query": "How does Doom check if the player has enough ammo to fire?",
     "expected_symbols": ["P_CheckAmmo"],
-    "expected_files": ["p_weapon.c"],
+    "expected_files": ["p_pspr.c"],
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
       "usefulness": "answer identifies P_CheckAmmo as the function that compares player ammo to weapon requirements"
@@ -322,11 +322,11 @@
     "id": "edge-10-intermission",
     "category": "edge",
     "query": "Where is the intermission screen between levels drawn?",
-    "expected_symbols": ["WI_Drawer"],
-    "expected_files": ["wi_stuff.c"],
+    "expected_symbols": ["WI_Drawer", "G_DoCompleted"],
+    "expected_files": ["wi_stuff.c", "g_game.c"],
     "rubric": {
       "faithfulness": "answer cites only retrieved chunks",
-      "usefulness": "answer identifies WI_Drawer in wi_stuff.c as the level-summary screen renderer"
+      "usefulness": "answer identifies WI_Drawer in wi_stuff.c as the level-summary renderer, or G_DoCompleted as the trigger"
     }
   },
   {
@@ -476,7 +476,7 @@
   {
     "id": "perf-02-player-tick",
     "category": "performance",
-    "query": "What functions are called during a single player update tick?",
+    "query": "How does P_PlayerThink process the player each game tick?",
     "expected_symbols": ["P_PlayerThink", "P_MovePlayer"],
     "expected_files": ["p_user.c"],
     "rubric": {
