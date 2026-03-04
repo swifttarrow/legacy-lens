@@ -3,7 +3,7 @@ import type { RetrievedChunk } from "../retrieval/types.js";
 import { getSystemPrompt } from "./prompts.js";
 import type { AnswerMode } from "./prompts.js";
 
-const CHAT_MODEL = "gpt-4o-mini";
+const CHAT_MODEL = "gpt-4.1-nano";
 
 // Truncate very long chunk bodies to keep per-call cost reasonable.
 // gpt-4o-mini has a 128K context window but dense C tables can be huge.
@@ -65,6 +65,7 @@ export async function* answerStream(
       { role: "user", content: userContent },
     ],
     stream: true,
+    ...(mode === "concise" && { max_tokens: 128 }),
   });
 
   for await (const event of stream) {

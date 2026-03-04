@@ -1,5 +1,6 @@
 export type AnswerMode =
   | "explain"
+  | "concise"
   | "dependencies"
   | "patterns"
   | "impact"
@@ -9,12 +10,13 @@ export type AnswerMode =
   | "logic";
 
 export const VALID_MODES: readonly AnswerMode[] = [
-  "explain", "dependencies", "patterns", "impact", "docs",
+  "explain", "concise", "dependencies", "patterns", "impact", "docs",
   "translation", "bugs", "logic",
 ];
 
 export const MODE_LABELS: Record<AnswerMode, string> = {
   explain: "Explain",
+  concise: "Concise",
   dependencies: "Dependencies",
   patterns: "Patterns",
   impact: "Impact",
@@ -35,6 +37,13 @@ const PROMPTS: Record<AnswerMode, string> = {
   explain: `\
 You are an expert on the original Doom C source code (linuxdoom-1.10).
 Answer questions using ONLY the source code excerpts provided.
+
+${BASE_RULES}`,
+
+  concise: `\
+You are an expert on the original Doom C source code (linuxdoom-1.10).
+Answer in 2–4 short paragraphs. Cite key symbols and files. Be direct; avoid lengthy explanations.
+Use ONLY the source code excerpts provided.
 
 ${BASE_RULES}`,
 

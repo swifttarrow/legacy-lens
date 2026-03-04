@@ -5,7 +5,7 @@ import { execFileSync } from "child_process";
 import OpenAI from "openai";
 import type { RetrievedChunk } from "../retrieval/types.js";
 
-const CHAT_MODEL = "gpt-4o-mini";
+const CHAT_MODEL = "gpt-4.1-nano";
 
 // Only attempt full-file rewrite for files at or below this line count.
 const MAX_FILE_LINES = 3_000;
