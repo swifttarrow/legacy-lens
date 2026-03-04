@@ -9,6 +9,11 @@ const CHAT_MODEL = "gpt-4o-mini";
 // gpt-4o-mini has a 128K context window but dense C tables can be huge.
 const MAX_CHUNK_CHARS = 2_000;
 
+// Keep at most this many turns (user+assistant pairs) of history to control cost.
+const MAX_HISTORY_TURNS = 3;
+
+export type HistoryMessage = { role: "user" | "assistant"; content: string };
+
 let _client: OpenAI | null = null;
 
 function getClient(): OpenAI {
@@ -40,6 +45,7 @@ export async function* answerStream(
   query: string,
   chunks: RetrievedChunk[],
   mode: AnswerMode = "explain",
+  history: HistoryMessage[] = [],
 ): AsyncGenerator<string> {
   const userContent =
     chunks.length === 0
@@ -48,10 +54,14 @@ export async function* answerStream(
         `Query: ${query}`
       : `## Retrieved source code\n\n${buildContext(chunks)}\n\n## Question\n\n${query}`;
 
+  // Trim history to the last MAX_HISTORY_TURNS user+assistant pairs.
+  const trimmedHistory = history.slice(-(MAX_HISTORY_TURNS * 2));
+
   const stream = await getClient().chat.completions.create({
     model: CHAT_MODEL,
     messages: [
       { role: "system", content: getSystemPrompt(mode) },
+      ...trimmedHistory,
       { role: "user", content: userContent },
     ],
     stream: true,

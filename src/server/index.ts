@@ -7,6 +7,7 @@ import { z } from "zod";
 import { retrieve } from "../retrieval/retrieve.js";
 import type { RetrievalProfile } from "../retrieval/retrieve.js";
 import { answerStream } from "../llm/answer.js";
+import type { HistoryMessage } from "../llm/answer.js";
 import { generateDiff } from "../llm/diff.js";
 import { VALID_MODES } from "../llm/prompts.js";
 import type { AnswerMode } from "../llm/prompts.js";
@@ -20,6 +21,11 @@ const DiffSchema = z.object({
   profile: z.enum(["interactive", "deep"]).default("interactive"),
 });
 
+const HistoryMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+});
+
 const AskSchema = z.object({
   query: z
     .string()
@@ -29,6 +35,7 @@ const AskSchema = z.object({
   mode: z
     .enum(VALID_MODES as [AnswerMode, ...AnswerMode[]])
     .default("explain"),
+  history: z.array(HistoryMessageSchema).optional().default([]),
 });
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
@@ -55,6 +62,7 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
   let query: string;
   let profile: RetrievalProfile;
   let mode: AnswerMode;
+  let history: HistoryMessage[];
   try {
     const parsed = JSON.parse(body) as unknown;
     const result = AskSchema.safeParse(parsed);
@@ -67,6 +75,7 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
     query = result.data.query;
     profile = result.data.profile;
     mode = result.data.mode;
+    history = result.data.history;
   } catch {
     res.writeHead(400, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "invalid JSON" }));
@@ -98,7 +107,7 @@ async function handleAsk(req: IncomingMessage, res: ServerResponse): Promise<voi
       })),
     });
 
-    for await (const token of answerStream(query, chunks, mode)) {
+    for await (const token of answerStream(query, chunks, mode, history)) {
       send({ type: "token", text: token });
     }
 

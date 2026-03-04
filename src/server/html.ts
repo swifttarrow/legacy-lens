@@ -46,17 +46,20 @@ export const HTML_PAGE = `<!DOCTYPE html>
     .chunk-loc { color: #666; flex-shrink: 0; }
     .chunk-score { color: #f90; flex-shrink: 0; min-width: 52px; text-align: right; }
 
-    /* Answer output */
-    #output { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 16px; min-height: 60px; line-height: 1.65; font-size: 14px; }
-    #output:empty { display: none; }
-    #output pre { margin: 8px 0; border-radius: 4px; overflow-x: auto; }
-    #output p { margin: 0 0 10px; }
-    #output p:last-child { margin-bottom: 0; }
-    #output ul, #output ol { margin: 4px 0 10px; padding-left: 22px; }
-    #output li { margin-bottom: 5px; }
-    #output h1, #output h2, #output h3 { color: #f90; margin: 12px 0 6px; }
-    #output code:not([class*="language-"]) { background: #242424; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 13px; }
-    #output pre code { font-size: 12px; }
+    /* Conversation thread */
+    #thread { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    #thread:empty { display: none; }
+    .bubble { border-radius: 6px; padding: 10px 14px; line-height: 1.65; font-size: 14px; }
+    .bubble-user { align-self: flex-end; background: #2a1400; border: 1px solid #f60; color: #f90; max-width: 78%; white-space: pre-wrap; word-break: break-word; }
+    .bubble-assistant { align-self: stretch; background: #1a1a1a; border: 1px solid #333; }
+    .bubble-assistant pre { margin: 8px 0; border-radius: 4px; overflow-x: auto; }
+    .bubble-assistant p { margin: 0 0 10px; }
+    .bubble-assistant p:last-child { margin-bottom: 0; }
+    .bubble-assistant ul, .bubble-assistant ol { margin: 4px 0 10px; padding-left: 22px; }
+    .bubble-assistant li { margin-bottom: 5px; }
+    .bubble-assistant h1, .bubble-assistant h2, .bubble-assistant h3 { color: #f90; margin: 12px 0 6px; }
+    .bubble-assistant code:not([class*="language-"]) { background: #242424; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: 13px; }
+    .bubble-assistant pre code { font-size: 12px; }
     a.citation { color: #f90; font-family: monospace; font-size: 12px; text-decoration: none; border-bottom: 1px dashed #f90; white-space: nowrap; cursor: pointer; }
     a.citation:hover { color: #fc0; border-bottom-color: #fc0; }
 
@@ -128,7 +131,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
     <div id="chunks-list"></div>
   </details>
 
-  <div id="output"></div>
+  <div id="thread"></div>
 
   <!-- File modal -->
   <div id="file-modal">
@@ -153,7 +156,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const submitBtn    = document.getElementById('submit-btn');
     const clearBtn     = document.getElementById('clear-btn');
     const statusEl     = document.getElementById('status');
-    const outputEl     = document.getElementById('output');
+    const threadEl     = document.getElementById('thread');
     const chunksPanel  = document.getElementById('chunks-panel');
     const chunksCount  = document.getElementById('chunks-count');
     const chunksList   = document.getElementById('chunks-list');
@@ -167,6 +170,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const fileModalTitle = document.getElementById('file-modal-title');
     const fileModalPre   = document.getElementById('file-modal-pre');
     const fileModalCode  = document.getElementById('file-modal-code');
+
+    // Conversation history for multi-turn context (client-side only, session memory).
+    let history = [];
 
     // ── Task toggle (Ask ↔ Suggest change) ────────────────────────────────────
     function getTask() {
@@ -182,8 +188,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
           ? 'e.g. Add a comment above P_DamageMobj explaining the damage formula'
           : 'e.g. Where is the rendering loop? How does the player move?';
         submitBtn.textContent = isDiff ? 'Generate diff' : 'Ask';
-        // Reset output on task switch
-        outputEl.innerHTML = '';
+        // Reset thread + history on task switch
+        history = [];
+        threadEl.innerHTML = '';
         diffOutput.style.display = 'none';
         diffOutputLabel.textContent = 'Unified diff';
         diffPre.innerHTML = '';
@@ -195,7 +202,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
     // ── Clear ──────────────────────────────────────────────────────────────────
     clearBtn.addEventListener('click', () => {
-      outputEl.innerHTML = '';
+      history = [];
+      threadEl.innerHTML = '';
       statusEl.textContent = '';
       queryEl.value = '';
       chunksPanel.style.display = 'none';
@@ -220,7 +228,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
       statusEl.textContent = 'Retrieving and generating diff\\u2026';
       diffOutput.style.display = 'none';
       diffPre.innerHTML = '';
-      outputEl.innerHTML = '';
+      threadEl.innerHTML = '';
       chunksPanel.style.display = 'none';
       chunksList.innerHTML = '';
 
@@ -266,18 +274,44 @@ export const HTML_PAGE = `<!DOCTYPE html>
       submitBtn.disabled = true;
       const askStartTime = Date.now();
       statusEl.textContent = 'Retrieving chunks\\u2026';
-      outputEl.innerHTML = '<pre id="stream-pre" style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit"></pre>';
       diffOutput.style.display = 'none';
       chunksPanel.style.display = 'none';
       chunksList.innerHTML = '';
-      const pre = document.getElementById('stream-pre');
+
+      // Append user bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bubble bubble-user';
+      userBubble.textContent = query;
+      threadEl.appendChild(userBubble);
+
+      // Append assistant bubble with a streaming pre
+      const assistantBubble = document.createElement('div');
+      assistantBubble.className = 'bubble bubble-assistant';
+      const streamPre = document.createElement('pre');
+      streamPre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit';
+      assistantBubble.appendChild(streamPre);
+      threadEl.appendChild(assistantBubble);
+      threadEl.scrollTop = threadEl.scrollHeight;
+
+      // Clear query input so user can type follow-up immediately
+      queryEl.value = '';
+
       let fullText = '';
+      let lastScrollTime = 0;
+      const SCROLL_THROTTLE_MS = 100;
+      function maybeScroll() {
+        const now = Date.now();
+        if (now - lastScrollTime >= SCROLL_THROTTLE_MS) {
+          lastScrollTime = now;
+          threadEl.scrollTop = threadEl.scrollHeight;
+        }
+      }
 
       try {
         const resp = await fetch('/api/ask', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query, profile, mode }),
+          body: JSON.stringify({ query, profile, mode, history: history.slice(-6) }),
         });
 
         if (!resp.ok || !resp.body) throw new Error('Server returned ' + resp.status);
@@ -305,34 +339,40 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 renderChunksPanel(event.chunks || [], event.count);
               } else if (event.type === 'token') {
                 fullText += event.text;
-                pre.textContent = fullText;
+                streamPre.textContent = fullText;
+                maybeScroll();
               } else if (event.type === 'done') {
                 const elapsedMs = Date.now() - askStartTime;
                 const elapsedStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
                 statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + '] (' + elapsedStr + ')';
-                outputEl.innerHTML = renderMarkdown(fullText);
+                assistantBubble.innerHTML = renderMarkdown(fullText);
                 if (typeof Prism !== 'undefined' && Prism.highlightElement) {
-                  outputEl.querySelectorAll('pre code[class*="language-"]').forEach((el) => {
+                  assistantBubble.querySelectorAll('pre code[class*="language-"]').forEach((el) => {
                     Prism.highlightElement(el);
                   });
                 }
-                // Attach click handlers directly to each citation (no delegation needed)
-                outputEl.querySelectorAll('a.citation').forEach(function(a) {
+                assistantBubble.querySelectorAll('a.citation').forEach(function(a) {
                   a.addEventListener('click', function(e) {
                     e.preventDefault();
                     openFileModal(a.dataset.path, parseInt(a.dataset.line || '0', 10));
                   });
                 });
+                // Append this turn to history for subsequent requests
+                history.push({ role: 'user', content: query });
+                history.push({ role: 'assistant', content: fullText });
+                threadEl.scrollTop = threadEl.scrollHeight;
               } else if (event.type === 'error') {
                 statusEl.textContent = 'Error: ' + event.message;
-                outputEl.innerHTML = '';
+                assistantBubble.remove();
+                userBubble.remove();
               }
             }
           }
         }
       } catch (err) {
         statusEl.textContent = 'Error: ' + (err.message || String(err));
-        outputEl.innerHTML = '';
+        assistantBubble.remove();
+        userBubble.remove();
       } finally {
         submitBtn.disabled = false;
       }
