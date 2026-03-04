@@ -171,6 +171,15 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const fileModalPre   = document.getElementById('file-modal-pre');
     const fileModalCode  = document.getElementById('file-modal-code');
 
+    // Event delegation: citation clicks work for all bubbles (including multi-turn)
+    threadEl.addEventListener('click', function(e) {
+      const a = e.target.closest('a.citation');
+      if (a) {
+        e.preventDefault();
+        openFileModal(a.dataset.path, parseInt(a.dataset.line || '0', 10));
+      }
+    });
+
     // Conversation history for multi-turn context (client-side only, session memory).
     let history = [];
 
@@ -351,12 +360,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
                     Prism.highlightElement(el);
                   });
                 }
-                assistantBubble.querySelectorAll('a.citation').forEach(function(a) {
-                  a.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    openFileModal(a.dataset.path, parseInt(a.dataset.line || '0', 10));
-                  });
-                });
+                // Citation clicks handled by delegation on threadEl
                 // Append this turn to history for subsequent requests
                 history.push({ role: 'user', content: query });
                 history.push({ role: 'assistant', content: fullText });
