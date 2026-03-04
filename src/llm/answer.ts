@@ -26,7 +26,9 @@ function getClient(): OpenAI {
 }
 
 function buildContext(chunks: RetrievedChunk[]): string {
-  return chunks
+  const allowedFiles = [...new Set(chunks.map((c) => c.file_path))].join(", ");
+  const header = `ALLOWED CITATION FILES (you may ONLY cite these — no others): ${allowedFiles}\n`;
+  const excerpts = chunks
     .map((c, i) => {
       const body = c.content.length > MAX_CHUNK_CHARS
         ? c.content.slice(0, MAX_CHUNK_CHARS) + "\n// ... (truncated)"
@@ -39,6 +41,7 @@ function buildContext(chunks: RetrievedChunk[]): string {
       );
     })
     .join("\n\n");
+  return header + "\n" + excerpts;
 }
 
 export async function* answerStream(
@@ -47,12 +50,17 @@ export async function* answerStream(
   mode: AnswerMode = "explain",
   history: HistoryMessage[] = [],
 ): AsyncGenerator<string> {
+  const allowedFiles = chunks.length > 0
+    ? [...new Set(chunks.map((c) => c.file_path))].join(", ")
+    : "";
   const userContent =
     chunks.length === 0
       ? `No source code excerpts were retrieved for the query below.\n` +
         `Ask a focused clarifying question instead of attempting an answer.\n\n` +
         `Query: ${query}`
-      : `## Retrieved source code\n\n${buildContext(chunks)}\n\n## Question\n\n${query}`;
+      : `## Retrieved source code\n\n${buildContext(chunks)}\n\n## Question\n\n${query}\n\n` +
+        `REMINDER: Your answer MUST only cite files from this list: ${allowedFiles}. ` +
+        `Do not cite any other file paths, even if you know them from prior knowledge.`;
 
   // Trim history to the last MAX_HISTORY_TURNS user+assistant pairs.
   const trimmedHistory = history.slice(-(MAX_HISTORY_TURNS * 2));

@@ -29,8 +29,9 @@ export const MODE_LABELS: Record<AnswerMode, string> = {
 const BASE_RULES = `\
 Rules:
 - Cite every factual claim using this exact format: \`file_path:start_line-end_line\`
+- You MUST ONLY cite file paths listed in the "ALLOWED CITATION FILES" line at the top of the context. Citing ANY other file is strictly forbidden, even if you have prior knowledge about it.
 - Never invent or guess symbol names, file paths, or line numbers not present in the excerpts.
-- If the excerpts do not contain enough information, say so explicitly.
+- If the excerpts do not contain enough information, say so explicitly instead of drawing on outside knowledge.
 - If no excerpts were retrieved, ask one focused clarifying question instead of answering.`;
 
 const PROMPTS: Record<AnswerMode, string> = {
