@@ -216,6 +216,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
     // ── Diff submit handler ────────────────────────────────────────────────────
     async function submitDiff(query, profile) {
       submitBtn.disabled = true;
+      const diffStartTime = Date.now();
       statusEl.textContent = 'Retrieving and generating diff\\u2026';
       diffOutput.style.display = 'none';
       diffPre.innerHTML = '';
@@ -233,7 +234,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
         if (data.error) {
           statusEl.textContent = 'Cannot generate diff: ' + data.error;
         } else {
-          statusEl.textContent = 'Done';
+          const elapsedMs = Date.now() - diffStartTime;
+          const elapsedStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
+          statusEl.textContent = 'Done (' + elapsedStr + ')';
           diffOutputLabel.textContent = data.file_path ? 'Unified diff: ' + data.file_path : 'Unified diff';
           diffPre.innerHTML = renderDiff(data.diff);
           diffOutput.style.display = '';
@@ -261,6 +264,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
       const mode    = modeSelect.value;
 
       submitBtn.disabled = true;
+      const askStartTime = Date.now();
       statusEl.textContent = 'Retrieving chunks\\u2026';
       outputEl.innerHTML = '<pre id="stream-pre" style="white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit"></pre>';
       diffOutput.style.display = 'none';
@@ -303,7 +307,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 fullText += event.text;
                 pre.textContent = fullText;
               } else if (event.type === 'done') {
-                statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + ']';
+                const elapsedMs = Date.now() - askStartTime;
+                const elapsedStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
+                statusEl.textContent = 'Done \\u2014 ' + event.chunkCount + ' chunk' + (event.chunkCount === 1 ? '' : 's') + ' retrieved [' + profile + ', ' + mode + '] (' + elapsedStr + ')';
                 outputEl.innerHTML = renderMarkdown(fullText);
                 if (typeof Prism !== 'undefined' && Prism.highlightElement) {
                   outputEl.querySelectorAll('pre code[class*="language-"]').forEach((el) => {
