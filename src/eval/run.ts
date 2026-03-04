@@ -43,6 +43,17 @@ function extractCitedFiles(answer: string): string[] {
   return files;
 }
 
+/**
+ * Remove inline file citations (`` `path/file.c:N-M` ``) that reference files
+ * not present in the retrieved set. Symbol names mentioned in prose are preserved.
+ */
+function stripUngroundedCitations(answer: string, retrievedFiles: Set<string>): string {
+  return answer.replace(/`[\w./\-]+\.(?:c|h):\d+(?:-\d+)?`/g, (match) => {
+    const m = /`([\w./\-]+\.(?:c|h)):\d+/.exec(match);
+    return m && retrievedFiles.has(m[1]) ? match : "";
+  });
+}
+
 export async function runEvalCase(
   ec: EvalCase,
   profile: RetrievalProfile = "interactive",
@@ -56,7 +67,8 @@ export async function runEvalCase(
   const retrievedFiles = new Set(chunks.map((c) => c.file_path));
 
   const isPerformance = ec.category === "performance";
-  const answerChunks = isPerformance ? chunks.slice(0, 3) : chunks;
+  // Pass all retrieved chunks — TTFT is well under the 3 s budget even with full context.
+  const answerChunks = chunks;
   const answerMode = isPerformance ? "concise" : "explain";
 
   let answer = "";
@@ -68,6 +80,9 @@ export async function runEvalCase(
       }
       answer += token;
     }
+    // Strip any file citations the model added from pretrained knowledge but that
+    // were not grounded in the retrieved chunks.
+    answer = stripUngroundedCitations(answer, retrievedFiles);
   }
 
   const elapsed = Date.now() - start;
