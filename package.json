@@ -15,7 +15,9 @@
     "ask": "tsx src/cli/ask.ts",
     "diff": "tsx src/cli/diff.ts",
     "start": "tsx src/server/index.ts",
-    "dev": "tsx watch src/server/index.ts"
+    "dev": "tsx watch src/server/index.ts",
+    "eval": "tsx src/cli/eval.ts",
+    "eval:retrieval": "tsx src/cli/eval.ts --retrieval-only"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
+    "langsmith": "0.5.7",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
