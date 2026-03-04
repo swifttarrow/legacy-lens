@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import type { RetrievalProfile } from "../retrieval/retrieve.js";
-import { runEval, printReport } from "../eval/run.js";
+import { runEval, printReport, writeReportToFile } from "../eval/run.js";
 import type { EvalCase, EvalResult } from "../eval/run.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -14,6 +14,7 @@ let parallel = 4;
 let upload = false;
 let retrievalOnly = false;
 let profile: RetrievalProfile = "interactive";
+let reportPath: string | null = "eval-report.md";
 
 for (let i = 0; i < args.length; i++) {
   if ((args[i] === "--parallel" || args[i] === "-p") && i + 1 < args.length) {
@@ -34,9 +35,14 @@ for (let i = 0; i < args.length; i++) {
       process.exit(1);
     }
     profile = val;
+  } else if (args[i] === "--report" && i + 1 < args.length) {
+    const val = args[++i];
+    reportPath = val === "json" ? "eval-report.json" : val;
+  } else if (args[i] === "--no-report") {
+    reportPath = null;
   } else if (args[i] === "--help" || args[i] === "-h") {
     console.log(
-      "Usage: pnpm eval [--parallel N] [--upload] [--retrieval-only] [--profile interactive|deep]",
+      "Usage: pnpm eval [--parallel N] [--upload] [--retrieval-only] [--profile interactive|deep] [--report path|json] [--no-report]",
     );
     process.exit(0);
   }
@@ -82,10 +88,12 @@ const results: EvalResult[] = await runEval(cases, {
     completed = done;
     const idx = String(done).padStart(width, " ");
     const status = result.passed ? "PASS" : "FAIL";
-    const elapsed = result.elapsed_ms >= 1000
-      ? `${(result.elapsed_ms / 1000).toFixed(1)}s`
-      : `${result.elapsed_ms}ms`;
-    process.stdout.write(`[${idx}/${total}] ${status}  ${result.case_id} (${elapsed})\n`);
+    const ms = result.ttft_ms ?? result.elapsed_ms;
+    const elapsed = ms >= 1000
+      ? `${(ms / 1000).toFixed(1)}s`
+      : `${ms}ms`;
+    const suffix = result.ttft_ms !== undefined ? " TTFT" : "";
+    process.stdout.write(`[${idx}/${total}] ${status}  ${result.case_id} (${elapsed}${suffix})\n`);
     if (!result.passed) {
       for (const reason of result.failure_reasons) {
         process.stdout.write(`       \u21b3 ${reason}\n`);
@@ -96,6 +104,11 @@ const results: EvalResult[] = await runEval(cases, {
 
 console.log();
 printReport(results);
+
+if (reportPath) {
+  writeReportToFile(results, reportPath);
+  console.log(`\nReport written to ${reportPath}`);
+}
 
 const failed = results.filter((r) => !r.passed).length;
 if (failed > 0) process.exit(1);

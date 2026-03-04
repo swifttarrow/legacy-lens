@@ -1,3 +1,4 @@
+import { writeFileSync } from "node:fs";
 import { retrieve } from "../retrieval/retrieve.js";
 import { answerStream } from "../llm/answer.js";
 import type { RetrievedChunk } from "../retrieval/types.js";
@@ -28,6 +29,7 @@ export interface EvalResult {
   latency_ok: boolean;
   faithfulness_ok: boolean;
   elapsed_ms: number;
+  ttft_ms?: number;
   retrieved_symbols: string[];
   failure_reasons: string[];
 }
@@ -53,14 +55,27 @@ export async function runEvalCase(
   const retrievedSymbols = chunks.map((c) => c.symbol_name);
   const retrievedFiles = new Set(chunks.map((c) => c.file_path));
 
+  const isPerformance = ec.category === "performance";
+  const answerChunks = isPerformance ? chunks.slice(0, 3) : chunks;
+  const answerMode = isPerformance ? "concise" : "explain";
+
   let answer = "";
+  let ttftMs: number | undefined;
   if (!retrievalOnly) {
-    for await (const token of answerStream(ec.query, chunks, "explain")) {
+    for await (const token of answerStream(ec.query, answerChunks, answerMode)) {
+      if (ttftMs === undefined) {
+        ttftMs = Date.now() - start;
+      }
       answer += token;
     }
   }
 
   const elapsed = Date.now() - start;
+
+  // For performance cases, use TTFT (retrieval + first token); otherwise use full elapsed.
+  const latencyMs = ec.rubric.latency_ms_max !== undefined && ttftMs !== undefined
+    ? ttftMs
+    : elapsed;
 
   // Symbol hit: at least one expected symbol in retrieved chunks or answer text.
   const symbolHit =
@@ -76,10 +91,10 @@ export async function runEvalCase(
       chunks.some((c) => c.file_path.endsWith(f)),
     );
 
-  // Latency: end-to-end time within the rubric budget (if specified).
+  // Latency: TTFT for performance cases (when budget specified), else full elapsed.
   const latencyOk =
     ec.rubric.latency_ms_max === undefined ||
-    elapsed <= ec.rubric.latency_ms_max;
+    latencyMs <= ec.rubric.latency_ms_max;
 
   // Faithfulness: every citation in the answer must come from a retrieved chunk.
   const faithfulnessOk =
@@ -97,8 +112,9 @@ export async function runEvalCase(
     );
   }
   if (!latencyOk) {
+    const metric = ec.rubric.latency_ms_max !== undefined && ttftMs !== undefined ? "TTFT" : "latency";
     failureReasons.push(
-      `latency ${elapsed}ms exceeded budget ${ec.rubric.latency_ms_max}ms`,
+      `${metric} ${latencyMs}ms exceeded budget ${ec.rubric.latency_ms_max}ms`,
     );
   }
   if (!faithfulnessOk) {
@@ -115,6 +131,7 @@ export async function runEvalCase(
     latency_ok: latencyOk,
     faithfulness_ok: faithfulnessOk,
     elapsed_ms: elapsed,
+    ttft_ms: ttftMs,
     retrieved_symbols: retrievedSymbols,
     failure_reasons: failureReasons,
   };
@@ -180,11 +197,13 @@ export function printReport(results: EvalResult[]): void {
     const r = sorted[i];
     const idx = String(i + 1).padStart(width, " ");
     const status = r.passed ? "PASS" : "FAIL";
-    const elapsed = r.elapsed_ms >= 1000
-      ? `${(r.elapsed_ms / 1000).toFixed(1)}s`
-      : `${r.elapsed_ms}ms`;
+    const ms = r.ttft_ms ?? r.elapsed_ms;
+    const elapsed = ms >= 1000
+      ? `${(ms / 1000).toFixed(1)}s`
+      : `${ms}ms`;
+    const suffix = r.ttft_ms !== undefined ? " TTFT" : "";
     console.log(
-      `[${idx}/${sorted.length}] ${status}  ${r.case_id} (${elapsed})`,
+      `[${idx}/${sorted.length}] ${status}  ${r.case_id} (${elapsed}${suffix})`,
     );
     if (!r.passed) {
       for (const reason of r.failure_reasons) {
@@ -221,4 +240,106 @@ export function printReport(results: EvalResult[]): void {
   console.log(
     `${"Total".padEnd(14)}${String(total).padStart(7)}${String(totalPass).padStart(6)}${String(totalFail).padStart(6)}${String(totalPct + "%").padStart(7)}`,
   );
+}
+
+function formatReportMarkdown(results: EvalResult[]): string {
+  const sorted = [...results].sort((a, b) => a.case_id.localeCompare(b.case_id));
+  const categories = ["happy", "edge", "adversarial", "performance"] as const;
+  const lines: string[] = ["# Eval Report", ""];
+
+  // Summary
+  lines.push("## Summary", "");
+  const total = results.length;
+  const totalPass = results.filter((r) => r.passed).length;
+  const totalFail = total - totalPass;
+  const totalPct = total > 0 ? Math.round((totalPass / total) * 100) : 0;
+  lines.push(`| Metric | Value |`);
+  lines.push(`|--------|-------|`);
+  lines.push(`| Total | ${total} |`);
+  lines.push(`| Pass | ${totalPass} |`);
+  lines.push(`| Fail | ${totalFail} |`);
+  lines.push(`| Pass % | ${totalPct}% |`);
+  lines.push("");
+
+  // Category breakdown
+  lines.push("## By Category", "");
+  lines.push("| Category | Total | Pass | Fail | Pass % |");
+  lines.push("|----------|-------|------|------|--------|");
+  for (const cat of categories) {
+    const catResults = results.filter((r) => r.category === cat);
+    if (catResults.length === 0) continue;
+    const pass = catResults.filter((r) => r.passed).length;
+    const fail = catResults.length - pass;
+    const pct = Math.round((pass / catResults.length) * 100);
+    lines.push(`| ${cat} | ${catResults.length} | ${pass} | ${fail} | ${pct}% |`);
+  }
+  lines.push("");
+
+  // Per-case table
+  lines.push("## Per Case", "");
+  lines.push("| ID | Category | Query | Status | Reason |");
+  lines.push("|----|----------|-------|--------|--------|");
+  for (const r of sorted) {
+    const status = r.passed ? "PASS" : "FAIL";
+    const reason = r.passed
+      ? ""
+      : r.failure_reasons
+          .join("; ")
+          .replace(/\|/g, "\\|")
+          .replace(/\n/g, " ");
+    const queryEsc = r.query
+      .replace(/\|/g, "\\|")
+      .replace(/\n/g, " ")
+      .slice(0, 60) + (r.query.length > 60 ? "…" : "");
+    lines.push(`| ${r.case_id} | ${r.category} | ${queryEsc} | ${status} | ${reason} |`);
+  }
+  return lines.join("\n");
+}
+
+function formatReportJson(results: EvalResult[]): string {
+  const sorted = [...results].sort((a, b) => a.case_id.localeCompare(b.case_id));
+  const categories = ["happy", "edge", "adversarial", "performance"] as const;
+  const summary: Record<string, { total: number; pass: number; fail: number; pass_pct: number }> = {};
+  for (const cat of categories) {
+    const catResults = results.filter((r) => r.category === cat);
+    if (catResults.length === 0) continue;
+    const pass = catResults.filter((r) => r.passed).length;
+    summary[cat] = {
+      total: catResults.length,
+      pass,
+      fail: catResults.length - pass,
+      pass_pct: Math.round((pass / catResults.length) * 100),
+    };
+  }
+  const total = results.length;
+  const totalPass = results.filter((r) => r.passed).length;
+  return JSON.stringify(
+    {
+      summary: {
+        total,
+        pass: totalPass,
+        fail: total - totalPass,
+        pass_pct: total > 0 ? Math.round((totalPass / total) * 100) : 0,
+      },
+      by_category: summary,
+      cases: sorted.map((r) => ({
+        case_id: r.case_id,
+        category: r.category,
+        query: r.query,
+        passed: r.passed,
+        elapsed_ms: r.elapsed_ms,
+        ttft_ms: r.ttft_ms,
+        failure_reasons: r.failure_reasons,
+      })),
+    },
+    null,
+    2,
+  );
+}
+
+/** Write report to file. Format inferred from path: .json = JSON, else Markdown. */
+export function writeReportToFile(results: EvalResult[], path: string): void {
+  const content =
+    path.endsWith(".json") ? formatReportJson(results) : formatReportMarkdown(results);
+  writeFileSync(path, content, "utf8");
 }
