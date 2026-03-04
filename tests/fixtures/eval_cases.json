@@ -1,0 +1,560 @@
+[
+  {
+    "id": "happy-01-rendering-loop",
+    "category": "happy",
+    "query": "Where is the main rendering loop implemented?",
+    "expected_symbols": ["R_RenderPlayerView"],
+    "expected_files": ["r_main.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies R_RenderPlayerView in r_main.c as the entry point for rendering a frame"
+    }
+  },
+  {
+    "id": "happy-02-player-movement",
+    "category": "happy",
+    "query": "How does player movement work?",
+    "expected_symbols": ["P_MovePlayer", "P_PlayerThink"],
+    "expected_files": ["p_user.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains P_MovePlayer applies thrust based on input and P_PlayerThink drives the per-tick player logic"
+    }
+  },
+  {
+    "id": "happy-03-weapon-fire",
+    "category": "happy",
+    "query": "Where is weapon firing handled?",
+    "expected_symbols": ["P_FireWeapon", "A_FirePistol", "A_FireShotgun"],
+    "expected_files": ["p_weapon.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies P_FireWeapon or specific weapon action functions"
+    }
+  },
+  {
+    "id": "happy-04-damage-calc",
+    "category": "happy",
+    "query": "How is damage to a monster calculated?",
+    "expected_symbols": ["P_DamageMobj"],
+    "expected_files": ["p_inter.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains P_DamageMobj applies damage, subtracts health, and calls P_KillMobj on death"
+    }
+  },
+  {
+    "id": "happy-05-bsp-traversal",
+    "category": "happy",
+    "query": "Where is BSP tree traversal implemented?",
+    "expected_symbols": ["R_RenderBSPNode"],
+    "expected_files": ["r_bsp.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies R_RenderBSPNode as the recursive BSP traversal function"
+    }
+  },
+  {
+    "id": "happy-06-enemy-chase",
+    "category": "happy",
+    "query": "How do enemies chase the player?",
+    "expected_symbols": ["A_Chase"],
+    "expected_files": ["p_enemy.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains A_Chase moves the monster toward the player and attempts to attack"
+    }
+  },
+  {
+    "id": "happy-07-automap-draw",
+    "category": "happy",
+    "query": "Where is the automap drawn?",
+    "expected_symbols": ["AM_Drawer"],
+    "expected_files": ["am_map.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies AM_Drawer in am_map.c as the automap rendering function"
+    }
+  },
+  {
+    "id": "happy-08-sound-start",
+    "category": "happy",
+    "query": "How are sounds started and played?",
+    "expected_symbols": ["S_StartSound"],
+    "expected_files": ["s_sound.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains S_StartSound queues a sound for playback"
+    }
+  },
+  {
+    "id": "happy-09-memory-alloc",
+    "category": "happy",
+    "query": "Where is memory allocated in Doom?",
+    "expected_symbols": ["Z_Malloc"],
+    "expected_files": ["z_zone.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies Z_Malloc in Doom's zone memory allocator"
+    }
+  },
+  {
+    "id": "happy-10-game-loop",
+    "category": "happy",
+    "query": "How does the main game loop run?",
+    "expected_symbols": ["D_DoomLoop"],
+    "expected_files": ["d_main.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies D_DoomLoop as the central event/tic/render loop"
+    }
+  },
+  {
+    "id": "happy-11-wad-load",
+    "category": "happy",
+    "query": "Where are WAD files loaded and parsed?",
+    "expected_symbols": ["W_AddFile"],
+    "expected_files": ["w_wad.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies W_AddFile as the function that opens and registers a WAD file"
+    }
+  },
+  {
+    "id": "happy-12-fixed-point",
+    "category": "happy",
+    "query": "How is fixed-point multiplication implemented?",
+    "expected_symbols": ["FixedMul"],
+    "expected_files": ["m_fixed.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains FixedMul performs 16.16 fixed-point multiplication"
+    }
+  },
+  {
+    "id": "happy-13-status-bar",
+    "category": "happy",
+    "query": "Where is the status bar drawn?",
+    "expected_symbols": ["ST_Drawer"],
+    "expected_files": ["st_stuff.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies ST_Drawer in st_stuff.c as the status bar renderer"
+    }
+  },
+  {
+    "id": "happy-14-line-of-sight",
+    "category": "happy",
+    "query": "How does line-of-sight checking work?",
+    "expected_symbols": ["P_CheckSight"],
+    "expected_files": ["p_sight.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains P_CheckSight traces a ray between two map objects"
+    }
+  },
+  {
+    "id": "happy-15-sector-specials",
+    "category": "happy",
+    "query": "Where are sector specials processed each tick?",
+    "expected_symbols": ["P_UpdateSpecials"],
+    "expected_files": ["p_spec.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies P_UpdateSpecials as the function that ticks animated textures and sector effects"
+    }
+  },
+  {
+    "id": "happy-16-floor-render",
+    "category": "happy",
+    "query": "How are floors and ceilings rendered?",
+    "expected_symbols": ["R_DrawPlanes", "R_FindPlane"],
+    "expected_files": ["r_plane.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains visplanes accumulate floor/ceiling spans during BSP walk and are drawn by R_DrawPlanes"
+    }
+  },
+  {
+    "id": "happy-17-spawn-mobj",
+    "category": "happy",
+    "query": "How are map objects (monsters, items, decorations) spawned?",
+    "expected_symbols": ["P_SpawnMobj"],
+    "expected_files": ["p_mobj.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains P_SpawnMobj allocates and initialises a mobj_t"
+    }
+  },
+  {
+    "id": "happy-18-hud-draw",
+    "category": "happy",
+    "query": "Where is the heads-up display text drawn?",
+    "expected_symbols": ["HU_Drawer"],
+    "expected_files": ["hu_stuff.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies HU_Drawer in hu_stuff.c as the HUD text renderer"
+    }
+  },
+  {
+    "id": "happy-19-player-death",
+    "category": "happy",
+    "query": "What happens when the player dies?",
+    "expected_symbols": ["P_DeathThink"],
+    "expected_files": ["p_user.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains P_DeathThink handles the death camera slump and respawn logic"
+    }
+  },
+  {
+    "id": "happy-20-give-health",
+    "category": "happy",
+    "query": "Where are health pickups processed?",
+    "expected_symbols": ["P_GiveHealth", "P_TouchSpecialThing"],
+    "expected_files": ["p_inter.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies P_GiveHealth or P_TouchSpecialThing in p_inter.c"
+    }
+  },
+  {
+    "id": "edge-01-mobjinfo",
+    "category": "edge",
+    "query": "What is the mobjinfo array and what does it contain?",
+    "expected_symbols": ["mobjinfo"],
+    "expected_files": ["info.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains mobjinfo is the table of mobjinfo_t structs defining every map-object type's properties"
+    }
+  },
+  {
+    "id": "edge-02-trig-tables",
+    "category": "edge",
+    "query": "Where are the trigonometric lookup tables stored?",
+    "expected_symbols": ["finesine"],
+    "expected_files": ["tables.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies finesine (and finecosine) arrays in tables.c as the pre-computed trig tables"
+    }
+  },
+  {
+    "id": "edge-03-demo-record",
+    "category": "edge",
+    "query": "How does Doom record gameplay demos?",
+    "expected_symbols": ["G_RecordDemo"],
+    "expected_files": ["g_game.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains G_RecordDemo sets up the demo buffer and per-tic input is written to it"
+    }
+  },
+  {
+    "id": "edge-04-blockmap",
+    "category": "edge",
+    "query": "What does P_BlockThingsIterator do?",
+    "expected_symbols": ["P_BlockThingsIterator"],
+    "expected_files": ["p_map.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains P_BlockThingsIterator iterates over things in a blockmap cell calling a callback"
+    }
+  },
+  {
+    "id": "edge-05-ammo-check",
+    "category": "edge",
+    "query": "How does Doom check if the player has enough ammo to fire?",
+    "expected_symbols": ["P_CheckAmmo"],
+    "expected_files": ["p_weapon.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies P_CheckAmmo as the function that compares player ammo to weapon requirements"
+    }
+  },
+  {
+    "id": "edge-06-finale",
+    "category": "edge",
+    "query": "Where is the end-of-episode finale screen drawn?",
+    "expected_symbols": ["F_Drawer"],
+    "expected_files": ["f_finale.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies F_Drawer in f_finale.c as the finale renderer"
+    }
+  },
+  {
+    "id": "edge-07-linedef-trigger",
+    "category": "edge",
+    "query": "How are linedef triggers processed when a player crosses them?",
+    "expected_symbols": ["P_CrossSpecialLine"],
+    "expected_files": ["p_spec.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies P_CrossSpecialLine as the handler for walk-over linedef specials"
+    }
+  },
+  {
+    "id": "edge-08-view-height",
+    "category": "edge",
+    "query": "How is the player's view height calculated including head bobbing?",
+    "expected_symbols": ["P_CalcHeight"],
+    "expected_files": ["p_user.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies P_CalcHeight as computing viewz from sector floor and bob offset"
+    }
+  },
+  {
+    "id": "edge-09-menu-input",
+    "category": "edge",
+    "query": "How does the menu system handle keyboard input?",
+    "expected_symbols": ["M_Responder"],
+    "expected_files": ["m_menu.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies M_Responder as the event handler that routes key presses to menu actions"
+    }
+  },
+  {
+    "id": "edge-10-intermission",
+    "category": "edge",
+    "query": "Where is the intermission screen between levels drawn?",
+    "expected_symbols": ["WI_Drawer"],
+    "expected_files": ["wi_stuff.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies WI_Drawer in wi_stuff.c as the level-summary screen renderer"
+    }
+  },
+  {
+    "id": "edge-11-sprite-project",
+    "category": "edge",
+    "query": "How are enemy sprites projected onto the screen?",
+    "expected_symbols": ["R_ProjectSprite"],
+    "expected_files": ["r_things.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies R_ProjectSprite as computing the screen-space position and size of a sprite"
+    }
+  },
+  {
+    "id": "edge-12-wall-render",
+    "category": "edge",
+    "query": "How are wall segments stored for rendering?",
+    "expected_symbols": ["R_StoreWallRange"],
+    "expected_files": ["r_segs.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer identifies R_StoreWallRange as the function that records a wall span for later column drawing"
+    }
+  },
+  {
+    "id": "adv-01-no-opengl",
+    "category": "adversarial",
+    "query": "Explain the OpenGL rendering pipeline Doom uses.",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not fabricate OpenGL calls or cite non-existent GL functions",
+      "usefulness": "answer correctly states Doom uses a software renderer with no OpenGL; may describe the actual software pipeline"
+    }
+  },
+  {
+    "id": "adv-02-no-python",
+    "category": "adversarial",
+    "query": "Where is the Python scripting engine in the Doom source?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not cite fabricated Python-related files or functions",
+      "usefulness": "answer correctly states there is no scripting engine in the 1993 Doom source"
+    }
+  },
+  {
+    "id": "adv-03-no-threads",
+    "category": "adversarial",
+    "query": "How does Doom's multi-threading system work?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not cite fabricated threading functions",
+      "usefulness": "answer correctly states Doom is single-threaded with no thread management code in the game logic"
+    }
+  },
+  {
+    "id": "adv-04-no-cpp",
+    "category": "adversarial",
+    "query": "What C++ classes does Doom use to represent game objects?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not invent C++ class hierarchies",
+      "usefulness": "answer correctly states Doom is written in C and uses mobj_t structs, not C++ classes"
+    }
+  },
+  {
+    "id": "adv-05-no-directx",
+    "category": "adversarial",
+    "query": "Where is DirectX or Direct3D initialized in the Doom source?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not fabricate DirectX initialization functions",
+      "usefulness": "answer correctly states the 1993 Doom source uses a platform-abstracted software blitter with no DirectX"
+    }
+  },
+  {
+    "id": "adv-06-no-encryption",
+    "category": "adversarial",
+    "query": "How does Doom encrypt savegame files?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not cite fabricated encryption functions",
+      "usefulness": "answer correctly states savegames are written as raw binary with no encryption"
+    }
+  },
+  {
+    "id": "adv-07-no-stl",
+    "category": "adversarial",
+    "query": "Where does Doom use the C++ Standard Template Library?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not fabricate STL usage",
+      "usefulness": "answer correctly states Doom is C code with no STL; it uses custom data structures like linked lists"
+    }
+  },
+  {
+    "id": "adv-08-no-gc",
+    "category": "adversarial",
+    "query": "Explain Doom's garbage collection system.",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not fabricate a GC system; may mention Z_Zone allocator as related context",
+      "usefulness": "answer correctly distinguishes the zone allocator (manual, tag-based) from garbage collection"
+    }
+  },
+  {
+    "id": "adv-09-no-ecs",
+    "category": "adversarial",
+    "query": "How does Doom's entity-component system work?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not fabricate component types or ECS functions",
+      "usefulness": "answer correctly states Doom uses monolithic mobj_t structs rather than a component system"
+    }
+  },
+  {
+    "id": "adv-10-no-lobby",
+    "category": "adversarial",
+    "query": "Where is the network lobby and matchmaking code?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer must not fabricate lobby or matchmaking functions",
+      "usefulness": "answer correctly states the 1993 source has no lobby; it uses a peer-to-peer startup without matchmaking"
+    }
+  },
+  {
+    "id": "perf-01-full-pipeline",
+    "category": "performance",
+    "query": "Explain the complete rendering pipeline from BSP traversal to final screen output.",
+    "expected_symbols": ["R_RenderPlayerView", "R_RenderBSPNode"],
+    "expected_files": ["r_main.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer traces BSP walk → visplane accumulation → wall/sprite drawing → final blit",
+      "latency_ms_max": 10000
+    }
+  },
+  {
+    "id": "perf-02-player-tick",
+    "category": "performance",
+    "query": "What functions are called during a single player update tick?",
+    "expected_symbols": ["P_PlayerThink", "P_MovePlayer"],
+    "expected_files": ["p_user.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer covers P_PlayerThink driving movement, weapon, and view updates each tic",
+      "latency_ms_max": 8000
+    }
+  },
+  {
+    "id": "perf-03-damage-flow",
+    "category": "performance",
+    "query": "Trace the full damage flow from a hitscan bullet hit to monster death.",
+    "expected_symbols": ["P_DamageMobj", "P_KillMobj"],
+    "expected_files": ["p_inter.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer covers PTR_ShootTraverse → P_DamageMobj → P_KillMobj → death state",
+      "latency_ms_max": 10000
+    }
+  },
+  {
+    "id": "perf-04-zmalloc-lookup",
+    "category": "performance",
+    "query": "What does Z_Malloc do and how does the zone allocator work?",
+    "expected_symbols": ["Z_Malloc"],
+    "expected_files": ["z_zone.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains the tag-based zone allocator with block headers and purging",
+      "latency_ms_max": 4000
+    }
+  },
+  {
+    "id": "perf-05-bspnode-lookup",
+    "category": "performance",
+    "query": "What is R_RenderBSPNode's purpose and how does it decide which subtree to visit first?",
+    "expected_symbols": ["R_RenderBSPNode"],
+    "expected_files": ["r_bsp.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains the front-to-back BSP traversal and the side test used to pick the near subtree",
+      "latency_ms_max": 4000
+    }
+  },
+  {
+    "id": "perf-06-map-geometry",
+    "category": "performance",
+    "query": "How do sectors, linedefs, and sidedefs relate to each other in Doom's map format?",
+    "expected_symbols": [],
+    "expected_files": [],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer explains linedefs reference two sidedefs which reference sectors, forming the 2D map geometry",
+      "latency_ms_max": 8000
+    }
+  },
+  {
+    "id": "perf-07-monster-ai",
+    "category": "performance",
+    "query": "Describe how monster AI decides when to chase versus attack the player.",
+    "expected_symbols": ["A_Chase", "A_Look"],
+    "expected_files": ["p_enemy.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer covers A_Look for target acquisition and A_Chase for movement with threshold-based attack selection",
+      "latency_ms_max": 8000
+    }
+  },
+  {
+    "id": "perf-08-game-tick",
+    "category": "performance",
+    "query": "What happens during a single game tick from user input to screen output?",
+    "expected_symbols": ["G_Ticker", "D_DoomLoop"],
+    "expected_files": ["g_game.c"],
+    "rubric": {
+      "faithfulness": "answer cites only retrieved chunks",
+      "usefulness": "answer covers D_DoomLoop driving G_Ticker (game logic) then rendering each tic",
+      "latency_ms_max": 10000
+    }
+  }
+]
