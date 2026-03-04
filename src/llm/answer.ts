@@ -6,7 +6,7 @@ import type { AnswerMode } from "./prompts.js";
 const CHAT_MODEL = "gpt-4.1-nano";
 
 // Truncate very long chunk bodies to keep per-call cost reasonable.
-// gpt-4o-mini has a 128K context window but dense C tables can be huge.
+// gpt-4.1-nano has a 128K context window but dense C tables can be huge.
 const MAX_CHUNK_CHARS = 2_000;
 
 // Keep at most this many turns (user+assistant pairs) of history to control cost.

@@ -5,7 +5,7 @@
 ## Phase 1 — Define Constraints
 
 ### Scale & Load
-- **Dataset:** ~1,994 code chunks extracted from the original Doom C source (~70K lines across ~30 files). Static corpus; no ongoing ingestion.
+- **Dataset:** ~2,000 code chunks extracted from the original Doom C source (~70K lines across 146 files). Static corpus; no ongoing ingestion.
 - **Query volume:** Low — personal/demo usage. No SLA requirement. Interactive queries should respond within 3–6 seconds end-to-end (retrieval + LLM stream).
 - **Concurrency:** Single-node; no horizontal scaling needed for this scope.
 
@@ -69,7 +69,7 @@ pgvector provides cosine similarity search and HNSW indexing. Sufficient for ~2K
 - **Deep profile:** multi-query expansion (4 variants) + top-20, SEARCH_LIMIT=60 per source.
 
 ### Answer Generation
-**Decision: OpenAI `gpt-4o-mini`, streaming**
+**Decision: OpenAI `gpt-4.1-nano`, streaming**
 
 - 128K context window; ample for 10–20 retrieved chunks (capped at 2000 chars each).
 - Streaming via SSE so users see tokens as they arrive.

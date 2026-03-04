@@ -15,6 +15,6 @@ Legacy Lens is a RAG-powered assistant for the original Doom (1993) C source cod
 
 - **Vector DB:** pgvector (Postgres)
 - **Embeddings:** OpenAI text-embedding-3-small
-- **LLM:** GPT-4o-mini
+- **LLM:** gpt-4.1-nano
 - **Chunking:** tree-sitter (syntax-aware, function/struct/typedef boundaries)
 - **Deployment:** Railway

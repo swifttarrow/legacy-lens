@@ -20,7 +20,7 @@
 | Model | Input | Output |
 |---|---|---|
 | `text-embedding-3-small` | $0.020 / 1M tokens | — |
-| `gpt-4o-mini` | $0.150 / 1M tokens | $0.600 / 1M tokens |
+| `gpt-4.1-nano` | $0.150 / 1M tokens | $0.600 / 1M tokens |
 
 ---
 
@@ -56,7 +56,7 @@ Assumes 10 queries/user/month and no infrastructure fixed costs beyond Railway.
 
 | Step | Tokens | Cost |
 |---|---|---|
-| Embed 1,994 chunks (~300 tokens avg) | ~598,000 | **$0.012** |
+| Embed ~2,000 chunks (~300 tokens avg) | ~600,000 | **$0.012** |
 | Re-ingest (incremental, only changed chunks) | ~0–50K | **<$0.001** |
 
 Ingest is effectively free. The entire Doom corpus costs less than 2 cents to embed.
@@ -66,7 +66,7 @@ Ingest is effectively free. The entire Doom corpus costs less than 2 cents to em
 ## Cost Optimization Notes
 
 1. **Embedding model choice:** `text-embedding-3-small` costs 5× less than `text-embedding-3-large` with negligible quality difference at this corpus size.
-2. **gpt-4o-mini vs gpt-4o:** gpt-4o would cost ~20× more per query ($0.013 vs $0.00063). Not justified for a code Q&A over a known, indexed corpus.
+2. **gpt-4.1-nano vs gpt-4o:** gpt-4o would cost ~20× more per query ($0.013 vs $0.00063). Not justified for a code Q&A over a known, indexed corpus.
 3. **Chunk truncation:** Capping chunks at 2,000 chars keeps context tokens bounded. Without truncation, `tables.c` alone could consume 8K+ tokens.
 4. **Deep mode cost:** Deep mode doubles chunks (20) and adds 3 extra embedding calls (4 variants − 1). Estimated cost: ~$0.0018/query — still under $0.002.
 5. **No streaming cost penalty:** Streaming (`stream: true`) has the same token cost as non-streaming; it only affects time-to-first-token, not billing.

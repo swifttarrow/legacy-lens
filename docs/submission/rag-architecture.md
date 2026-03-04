@@ -25,7 +25,7 @@ User Query
                    │
                    ▼
            [LLM Answer Stream]
-           (gpt-4o-mini, mode-specific prompt)
+           (gpt-4.1-nano, mode-specific prompt)
                    │
                    ▼
            [SSE → Client UI]
@@ -37,7 +37,7 @@ User Query
 
 **Choice: Postgres + pgvector**
 
-The Doom chunk corpus (~1,994 rows) is small enough that the same Postgres instance used for structured storage also serves as the vector store. pgvector provides:
+The Doom chunk corpus (~2,000 rows) is small enough that the same Postgres instance used for structured storage also serves as the vector store. pgvector provides:
 
 - `vector(1536)` column type with cosine distance operator (`<=>`)
 - HNSW index (`vector_cosine_ops`) for approximate nearest-neighbor search
@@ -91,7 +91,7 @@ start_line, end_line, content, chunk_hash, repo_ref, embedding
 A `bufferSize` of `max(source.length * 2, 32K)` is passed to `parser.parse()` to avoid "Invalid argument" errors on files with large static initializers (`tables.c`, `info.c`).
 
 ### Results
-1,994 unique chunks extracted from 28 Doom C source files; 770 are `function` chunks.
+~2,000 unique chunks extracted from 146 Doom C source files; 770 are `function` chunks.
 
 ---
 
@@ -166,7 +166,7 @@ All modes share the same retrieval pipeline; only the system prompt changes.
 
 | Metric | Observed |
 |---|---|
-| Ingest (chunks) | ~1,994 chunks from 28 files, <10s |
+| Ingest (chunks) | ~2,000 chunks from 146 files, <10s |
 | Ingest (embeddings) | ~600K tokens, ~20 API calls, <30s |
 | Interactive retrieval latency | ~200–400ms (FTS + vector + merge) |
 | Total query latency (TTFT) | ~1–2s (retrieval + LLM first token) |
