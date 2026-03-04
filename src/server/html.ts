@@ -1,4 +1,4 @@
-import { VALID_MODES, MODE_LABELS } from "../llm/prompts.js";
+import { VALID_MODES, MODE_LABELS, MODE_DESCRIPTIONS } from "../llm/prompts.js";
 import type { AnswerMode } from "../llm/prompts.js";
 
 const MODE_OPTIONS_HTML = VALID_MODES.map(
@@ -24,6 +24,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
     .toggle-group input { display: none; }
     textarea { width: 100%; background: #1a1a1a; color: #ddd; border: 1px solid #444; padding: 10px; font-size: 14px; border-radius: 4px; resize: vertical; }
     textarea:focus { outline: none; border-color: #f60; }
+    #mode-description { font-size: 13px; color: #888; margin: 0 0 8px; line-height: 1.5; min-height: 1.5em; }
     .btn-row { display: flex; gap: 8px; margin-top: 8px; }
     button { padding: 8px 20px; font-size: 14px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; }
     #submit-btn { background: #f60; color: #000; }
@@ -46,8 +47,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
     .chunk-loc { color: #666; flex-shrink: 0; }
     .chunk-score { color: #f90; flex-shrink: 0; min-width: 52px; text-align: right; }
 
-    /* Conversation thread */
-    #thread { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    /* Conversation thread — column-reverse so newest appears at top */
+    #thread { display: flex; flex-direction: column-reverse; gap: 10px; margin-top: 10px; }
     #thread:empty { display: none; }
     .bubble { border-radius: 6px; padding: 10px 14px; line-height: 1.65; font-size: 14px; }
     .bubble-user { align-self: flex-end; background: #2a1400; border: 1px solid #f60; color: #f90; max-width: 78%; white-space: pre-wrap; word-break: break-word; }
@@ -119,6 +120,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
   </div>
 
   <form id="form">
+    <p id="mode-description"></p>
     <textarea id="query" rows="3" placeholder="e.g. Where is the rendering loop? How does the player move?"></textarea>
     <div class="btn-row">
       <button type="submit" id="submit-btn">Ask</button>
@@ -170,8 +172,18 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const chunksPanel  = document.getElementById('chunks-panel');
     const chunksCount  = document.getElementById('chunks-count');
     const chunksList   = document.getElementById('chunks-list');
-    const modeSelect     = document.getElementById('mode-select');
-    const analysisLabel  = document.getElementById('analysis-label');
+    const modeSelect       = document.getElementById('mode-select');
+    const analysisLabel    = document.getElementById('analysis-label');
+    const modeDescriptionEl = document.getElementById('mode-description');
+    const MODE_DESCRIPTIONS = ${JSON.stringify(MODE_DESCRIPTIONS)};
+
+    function updateModeDescription() {
+      if (getTask() !== 'ask') return;
+      const mode = modeSelect.value;
+      modeDescriptionEl.textContent = MODE_DESCRIPTIONS[mode] || '';
+    }
+
+    modeSelect.addEventListener('change', updateModeDescription);
     const diffOutput     = document.getElementById('diff-output');
     const diffOutputLabel = document.getElementById('diff-output-label');
     const diffPre        = document.getElementById('diff-pre');
@@ -203,6 +215,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
         const isDiff = getTask() === 'diff';
         modeSelect.style.display   = isDiff ? 'none' : '';
         analysisLabel.style.display = isDiff ? 'none' : '';
+        modeDescriptionEl.style.display = isDiff ? 'none' : '';
         queryEl.placeholder = isDiff
           ? 'e.g. Add a comment above P_DamageMobj explaining the damage formula'
           : 'e.g. Where is the rendering loop? How does the player move?';
@@ -216,8 +229,12 @@ export const HTML_PAGE = `<!DOCTYPE html>
         statusEl.textContent = '';
         chunksPanel.style.display = 'none';
         chunksList.innerHTML = '';
+        if (!isDiff) updateModeDescription();
       });
     });
+
+    // Initial mode description
+    updateModeDescription();
 
     // ── Clear ──────────────────────────────────────────────────────────────────
     clearBtn.addEventListener('click', () => {
@@ -310,7 +327,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
       streamPre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit';
       assistantBubble.appendChild(streamPre);
       threadEl.appendChild(assistantBubble);
-      threadEl.scrollTop = threadEl.scrollHeight;
+      assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
 
       // Clear query input so user can type follow-up immediately
       queryEl.value = '';
@@ -322,7 +339,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
         const now = Date.now();
         if (now - lastScrollTime >= SCROLL_THROTTLE_MS) {
           lastScrollTime = now;
-          threadEl.scrollTop = threadEl.scrollHeight;
+          assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
         }
       }
 
@@ -391,7 +408,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 // Append this turn to history for subsequent requests
                 history.push({ role: 'user', content: query });
                 history.push({ role: 'assistant', content: fullText });
-                threadEl.scrollTop = threadEl.scrollHeight;
+                assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
               } else if (event.type === 'error') {
                 statusEl.textContent = 'Error: ' + event.message;
                 assistantBubble.remove();

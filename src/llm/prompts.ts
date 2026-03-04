@@ -26,6 +26,28 @@ export const MODE_LABELS: Record<AnswerMode, string> = {
   logic: "Business Logic",
 };
 
+/** Short 1–2 sentence descriptions for each analysis mode (shown in UI). */
+export const MODE_DESCRIPTIONS: Record<AnswerMode, string> = {
+  explain:
+    "Answers questions about how the code works, with citations. Example: Where is the rendering loop implemented?",
+  concise:
+    "Brief 2–4 paragraph answers; direct and to the point. Example: How does the player move?",
+  dependencies:
+    "Maps callers, callees, data dependencies, and headers. Example: What does P_DamageMobj depend on?",
+  patterns:
+    "Identifies recurring patterns across the codebase. Example: Where are fixed-point multiplications used?",
+  impact:
+    "Analyzes what would be affected by changing a symbol. Example: What would break if we changed P_DamageMobj?",
+  docs:
+    "Generates documentation (C block comment + summary). Example: Document the P_DamageMobj function.",
+  translation:
+    "Porting hints for modern languages (idioms, types, pitfalls). Example: How would we port P_DamageMobj to Rust?",
+  bugs:
+    "Surfaces potential bug patterns and severity. Example: What are potential bugs in P_DamageMobj?",
+  logic:
+    "Extracts game logic in plain English (mechanics, rules, constants). Example: What does P_DamageMobj do in gameplay terms?",
+};
+
 const BASE_RULES = `\
 Rules:
 - Cite every factual claim using this exact format: \`file_path:start_line-end_line\`
