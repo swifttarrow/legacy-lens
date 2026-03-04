@@ -14,3 +14,4 @@ M9 — Code understanding features (4+ from REQUIREMENTS)
 M10 — Submission docs (Pre-Search, RAG Architecture, AI Cost analysis)
 M11 — Diff in UI
 M12 ✅ — Conversation context (multi-turn, history passed to LLM)
+M13 ✅ — Evals (50 cases: happy/edge/adversarial/performance, local run, LangSmith upload, parallel)
