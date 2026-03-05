@@ -476,6 +476,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
       fileModalCode.className = 'language-c';
       fileModal.style.display = 'block';
 
+      var ghUrl = 'https://github.com/id-Software/DOOM/blob/master/' + filePath + (startLine ? '#L' + startLine : '');
+
       try {
         const resp = await fetch('/api/file?path=' + encodeURIComponent(filePath));
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -483,7 +485,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
         fileModalCode.textContent = text;
         if (typeof Prism !== 'undefined' && Prism.highlightElement) Prism.highlightElement(fileModalCode);
       } catch (err) {
-        fileModalCode.textContent = 'Error loading file: ' + (err.message || String(err));
+        fileModalCode.innerHTML = 'File not available. <a href="' + escHtml(ghUrl) + '" target="_blank" rel="noopener">View on GitHub</a>';
         return;
       }
 

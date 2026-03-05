@@ -171,6 +171,13 @@ async function handleDiff(req: IncomingMessage, res: ServerResponse): Promise<vo
   }
 }
 
+const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/id-Software/DOOM/master/";
+
+function isSafeFilePath(filePath: string): boolean {
+  if (!filePath || filePath.includes("..") || path.isAbsolute(filePath)) return false;
+  return /^[\w./-]+\.(c|h)$/i.test(filePath.trim());
+}
+
 async function handleFile(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const rawUrl = req.url ?? "/";
   const parsedUrl = new URL(rawUrl, "http://localhost");
@@ -182,35 +189,48 @@ async function handleFile(req: IncomingMessage, res: ServerResponse): Promise<vo
     return;
   }
 
-  const doomDir = process.env.DOOM_REPO_DIR;
-  if (!doomDir) {
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "DOOM_REPO_DIR is not set" }));
-    return;
-  }
-
-  const base = path.resolve(doomDir);
-  const target = path.resolve(base, filePath);
-
-  // Prevent directory traversal: target must be strictly inside base
-  if (!target.startsWith(base + path.sep)) {
+  if (!isSafeFilePath(filePath)) {
     res.writeHead(403, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "access denied" }));
     return;
   }
 
+  const doomDir = process.env.DOOM_REPO_DIR;
+  if (doomDir) {
+    const base = path.resolve(doomDir);
+    const target = path.resolve(base, filePath);
+    if (target.startsWith(base + path.sep)) {
+      try {
+        const content = await fs.readFile(target, "utf-8");
+        res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end(content);
+        return;
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "failed to read file" }));
+          return;
+        }
+        // ENOENT: fall through to GitHub fallback
+      }
+    }
+  }
+
+  // Fallback: fetch from GitHub (used when DOOM_REPO_DIR is unset or file missing in production)
   try {
-    const content = await fs.readFile(target, "utf-8");
-    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end(content);
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+    const ghUrl = GITHUB_RAW_BASE + filePath;
+    const ghResp = await fetch(ghUrl);
+    if (!ghResp.ok) {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "file not found" }));
-    } else {
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "failed to read file" }));
+      return;
     }
+    const content = await ghResp.text();
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end(content);
+  } catch {
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "file not found" }));
   }
 }
 
