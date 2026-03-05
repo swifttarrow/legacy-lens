@@ -1,4 +1,4 @@
-import { VALID_MODES, MODE_LABELS, MODE_DESCRIPTIONS } from "../llm/prompts.js";
+import { VALID_MODES, MODE_LABELS, MODE_DESCRIPTIONS, MODE_PLACEHOLDERS } from "../llm/prompts.js";
 import type { AnswerMode } from "../llm/prompts.js";
 
 const MODE_OPTIONS_HTML = VALID_MODES.map(
@@ -121,7 +121,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
   <form id="form">
     <p id="mode-description"></p>
-    <textarea id="query" rows="3" placeholder="e.g. Where is the rendering loop? How does the player move?"></textarea>
+    <textarea id="query" rows="3" placeholder=""></textarea>
     <div class="btn-row">
       <button type="submit" id="submit-btn">Ask</button>
       <button type="button" id="clear-btn">Clear</button>
@@ -176,11 +176,13 @@ export const HTML_PAGE = `<!DOCTYPE html>
     const analysisLabel    = document.getElementById('analysis-label');
     const modeDescriptionEl = document.getElementById('mode-description');
     const MODE_DESCRIPTIONS = ${JSON.stringify(MODE_DESCRIPTIONS)};
+    const MODE_PLACEHOLDERS = ${JSON.stringify(MODE_PLACEHOLDERS)};
 
     function updateModeDescription() {
       if (getTask() !== 'ask') return;
       const mode = modeSelect.value;
       modeDescriptionEl.textContent = MODE_DESCRIPTIONS[mode] || '';
+      queryEl.placeholder = MODE_PLACEHOLDERS[mode] ? 'e.g. ' + MODE_PLACEHOLDERS[mode] : 'e.g. Where is the rendering loop?';
     }
 
     modeSelect.addEventListener('change', updateModeDescription);
@@ -216,9 +218,11 @@ export const HTML_PAGE = `<!DOCTYPE html>
         modeSelect.style.display   = isDiff ? 'none' : '';
         analysisLabel.style.display = isDiff ? 'none' : '';
         modeDescriptionEl.style.display = isDiff ? 'none' : '';
-        queryEl.placeholder = isDiff
-          ? 'e.g. Add a comment above P_DamageMobj explaining the damage formula'
-          : 'e.g. Where is the rendering loop? How does the player move?';
+        if (isDiff) {
+          queryEl.placeholder = 'e.g. Add a comment above P_DamageMobj explaining the damage formula';
+        } else {
+          updateModeDescription();
+        }
         submitBtn.textContent = isDiff ? 'Generate diff' : 'Ask';
         // Reset thread + history on task switch
         history = [];
@@ -314,16 +318,15 @@ export const HTML_PAGE = `<!DOCTYPE html>
       chunksPanel.style.display = 'none';
       chunksList.innerHTML = '';
 
-      // Append user bubble
+      // Append user bubble and assistant bubble (order reversed by column-reverse: question above answer)
       const userBubble = document.createElement('div');
       userBubble.className = 'bubble bubble-user';
       userBubble.textContent = query;
-      threadEl.appendChild(userBubble);
 
-      // Append assistant bubble — format markdown incrementally as we stream
       const assistantBubble = document.createElement('div');
       assistantBubble.className = 'bubble bubble-assistant';
       threadEl.appendChild(assistantBubble);
+      threadEl.appendChild(userBubble);
       assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
 
       // Clear query input so user can type follow-up immediately
