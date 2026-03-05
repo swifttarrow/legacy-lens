@@ -17,6 +17,8 @@ export interface EvalCase {
   expected_symbols: string[];
   expected_files: string[];
   rubric: EvalRubric;
+  /** If present, answer fails if it contains any of these strings (case-insensitive). Used for injection/relevance evals. */
+  must_not_contain?: string[];
 }
 
 export interface EvalResult {
@@ -28,6 +30,7 @@ export interface EvalResult {
   file_hit: boolean;
   latency_ok: boolean;
   faithfulness_ok: boolean;
+  rejection_ok: boolean;
   elapsed_ms: number;
   ttft_ms?: number;
   retrieved_symbols: string[];
@@ -116,6 +119,14 @@ export async function runEvalCase(
     retrievalOnly ||
     extractCitedFiles(answer).every((f) => retrievedFiles.has(f));
 
+  // Rejection: for injection/relevance evals, answer must not contain forbidden phrases.
+  const mustNotContain = ec.must_not_contain ?? [];
+  const rejectionOk =
+    mustNotContain.length === 0 ||
+    !mustNotContain.some((phrase) =>
+      answer.toLowerCase().includes(phrase.toLowerCase()),
+    );
+
   if (!symbolHit) {
     failureReasons.push(
       `symbol not retrieved: expected one of [${ec.expected_symbols.join(", ")}]`,
@@ -135,16 +146,23 @@ export async function runEvalCase(
   if (!faithfulnessOk) {
     failureReasons.push("answer cites files not present in retrieved chunks");
   }
+  if (!rejectionOk) {
+    const found = mustNotContain.find((p) =>
+      answer.toLowerCase().includes(p.toLowerCase()),
+    );
+    failureReasons.push(`answer contains forbidden phrase: "${found}"`);
+  }
 
   return {
     case_id: ec.id,
     category: ec.category,
     query: ec.query,
-    passed: symbolHit && fileHit && latencyOk && faithfulnessOk,
+    passed: symbolHit && fileHit && latencyOk && faithfulnessOk && rejectionOk,
     symbol_hit: symbolHit,
     file_hit: fileHit,
     latency_ok: latencyOk,
     faithfulness_ok: faithfulnessOk,
+    rejection_ok: rejectionOk,
     elapsed_ms: elapsed,
     ttft_ms: ttftMs,
     retrieved_symbols: retrievedSymbols,
