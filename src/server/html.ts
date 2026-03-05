@@ -50,6 +50,14 @@ export const HTML_PAGE = `<!DOCTYPE html>
     /* Conversation thread — column-reverse so newest appears at top */
     #thread { display: flex; flex-direction: column-reverse; gap: 10px; margin-top: 10px; }
     #thread:empty { display: none; }
+    .chat-turn { border: 1px solid #2a2a2a; border-radius: 6px; background: #161616; overflow: hidden; }
+    .chat-turn summary { padding: 8px 14px; cursor: pointer; color: #888; font-size: 13px; user-select: none; list-style: none; display: flex; align-items: center; gap: 8px; }
+    .chat-turn summary::-webkit-details-marker { display: none; }
+    .chat-turn summary::before { content: '\\25B6'; font-size: 10px; transition: transform 0.15s; flex-shrink: 0; }
+    .chat-turn[open] summary::before { transform: rotate(90deg); }
+    .chat-turn summary:hover { color: #aaa; }
+    .chat-turn .turn-content { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
+    .chat-turn[open] .turn-content { padding-top: 0; }
     .bubble { border-radius: 6px; padding: 10px 14px; line-height: 1.65; font-size: 14px; }
     .bubble-user { align-self: flex-end; background: #2a1400; border: 1px solid #f60; color: #f90; max-width: 78%; white-space: pre-wrap; word-break: break-word; }
     .bubble-assistant { align-self: stretch; background: #1a1a1a; border: 1px solid #333; }
@@ -318,15 +326,31 @@ export const HTML_PAGE = `<!DOCTYPE html>
       chunksPanel.style.display = 'none';
       chunksList.innerHTML = '';
 
-      // Append user bubble and assistant bubble (order reversed by column-reverse: question above answer)
+      // Collapse all previous turns; new turn will be expanded
+      threadEl.querySelectorAll('.chat-turn').forEach((d) => { d.open = false; });
+
+      // Create turn wrapper (details/summary) with user + assistant bubbles
+      const turnEl = document.createElement('details');
+      turnEl.className = 'chat-turn';
+      turnEl.open = true;
+      const summaryEl = document.createElement('summary');
+      summaryEl.textContent = query.length > 60 ? query.slice(0, 60) + '\\u2026' : query;
+      const turnContent = document.createElement('div');
+      turnContent.className = 'turn-content';
+
       const userBubble = document.createElement('div');
       userBubble.className = 'bubble bubble-user';
       userBubble.textContent = query;
 
       const assistantBubble = document.createElement('div');
       assistantBubble.className = 'bubble bubble-assistant';
-      threadEl.appendChild(assistantBubble);
-      threadEl.appendChild(userBubble);
+
+      turnContent.appendChild(userBubble);
+      turnContent.appendChild(assistantBubble);
+      turnEl.appendChild(summaryEl);
+      turnEl.appendChild(turnContent);
+      threadEl.appendChild(turnEl);
+
       assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
 
       // Clear query input so user can type follow-up immediately
@@ -337,14 +361,25 @@ export const HTML_PAGE = `<!DOCTYPE html>
       let lastScrollTime = 0;
       let lastFormatTime = 0;
       let formatTimeoutId = null;
+      let userScrolledAt = 0;
+      let programmaticScroll = false;
       const SCROLL_THROTTLE_MS = 100;
       const FORMAT_THROTTLE_MS = 80;
+      const USER_SCROLL_COOLDOWN_MS = 400;
+
+      const scrollHandler = () => {
+        if (!programmaticScroll) userScrolledAt = Date.now();
+      };
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+
       function maybeScroll() {
         const now = Date.now();
-        if (now - lastScrollTime >= SCROLL_THROTTLE_MS) {
-          lastScrollTime = now;
-          assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
-        }
+        if (userScrolledAt > 0 && now - userScrolledAt < USER_SCROLL_COOLDOWN_MS) return;
+        if (now - lastScrollTime < SCROLL_THROTTLE_MS) return;
+        lastScrollTime = now;
+        programmaticScroll = true;
+        assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
+        requestAnimationFrame(() => { programmaticScroll = false; });
       }
       function flushFormatted() {
         if (formatTimeoutId != null) {
@@ -438,17 +473,16 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
               } else if (event.type === 'error') {
                 statusEl.textContent = 'Error: ' + event.message;
-                assistantBubble.remove();
-                userBubble.remove();
+                turnEl.remove();
               }
             }
           }
         }
       } catch (err) {
         statusEl.textContent = 'Error: ' + (err.message || String(err));
-        assistantBubble.remove();
-        userBubble.remove();
+        turnEl.remove();
       } finally {
+        window.removeEventListener('scroll', scrollHandler);
         submitBtn.disabled = false;
       }
     });
@@ -481,10 +515,18 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
       var ghUrl = 'https://github.com/id-Software/DOOM/blob/master/' + filePath + (startLine ? '#L' + startLine : '');
 
+      var text = null;
       try {
         const resp = await fetch('/api/file?path=' + encodeURIComponent(filePath));
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const text = await resp.text();
+        if (resp.ok) {
+          text = await resp.text();
+        } else if (resp.status === 404) {
+          // Fallback: server may not have DOOM repo (e.g. Nixpacks deploy); fetch from GitHub raw
+          const rawUrl = 'https://raw.githubusercontent.com/id-Software/DOOM/master/' + filePath;
+          const rawResp = await fetch(rawUrl);
+          if (rawResp.ok) text = await rawResp.text();
+        }
+        if (!text) throw new Error('File not found');
         fileModalCode.textContent = text;
         if (typeof Prism !== 'undefined' && Prism.highlightElement) Prism.highlightElement(fileModalCode);
       } catch (err) {
