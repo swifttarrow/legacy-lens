@@ -110,8 +110,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
     </div>
     <span style="font-size:13px;color:#888;margin-left:8px">Retrieval:</span>
     <div class="toggle-group">
-      <label><input type="radio" name="profile" value="interactive" checked><span>Interactive</span></label>
-      <label><input type="radio" name="profile" value="deep"><span>Deep</span></label>
+      <label title="Fast retrieval: top-10 chunks, single query. Best for quick answers."><input type="radio" name="profile" value="interactive" checked><span>Interactive</span></label>
+      <label title="Thorough retrieval: multi-query expansion, top-20 chunks, stronger rerank. Best for complex questions."><input type="radio" name="profile" value="deep"><span>Deep</span></label>
     </div>
     <span id="analysis-label" style="font-size:13px;color:#888;margin-left:8px">Analysis:</span>
     <select id="mode-select">
@@ -320,12 +320,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
       userBubble.textContent = query;
       threadEl.appendChild(userBubble);
 
-      // Append assistant bubble with a streaming pre
+      // Append assistant bubble — format markdown incrementally as we stream
       const assistantBubble = document.createElement('div');
       assistantBubble.className = 'bubble bubble-assistant';
-      const streamPre = document.createElement('pre');
-      streamPre.style.cssText = 'white-space:pre-wrap;word-break:break-word;margin:0;font-family:inherit';
-      assistantBubble.appendChild(streamPre);
       threadEl.appendChild(assistantBubble);
       assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
 
@@ -334,12 +331,38 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
       let fullText = '';
       let lastScrollTime = 0;
+      let lastFormatTime = 0;
+      let formatTimeoutId = null;
       const SCROLL_THROTTLE_MS = 100;
+      const FORMAT_THROTTLE_MS = 80;
       function maybeScroll() {
         const now = Date.now();
         if (now - lastScrollTime >= SCROLL_THROTTLE_MS) {
           lastScrollTime = now;
           assistantBubble.scrollIntoView({ block: 'start', behavior: 'auto' });
+        }
+      }
+      function flushFormatted() {
+        if (formatTimeoutId != null) {
+          clearTimeout(formatTimeoutId);
+          formatTimeoutId = null;
+        }
+        assistantBubble.innerHTML = renderMarkdown(fullText);
+        maybeScroll();
+      }
+      function scheduleFormattedUpdate() {
+        if (formatTimeoutId != null) return;
+        const now = Date.now();
+        if (now - lastFormatTime >= FORMAT_THROTTLE_MS) {
+          lastFormatTime = now;
+          flushFormatted();
+        } else {
+          formatTimeoutId = setTimeout(() => {
+            formatTimeoutId = null;
+            lastFormatTime = Date.now();
+            assistantBubble.innerHTML = renderMarkdown(fullText);
+            maybeScroll();
+          }, FORMAT_THROTTLE_MS - (now - lastFormatTime));
         }
       }
 
@@ -378,8 +401,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
                 statusEl.textContent = 'First token in ' + ttftStr + ' \\u2026';
               } else if (event.type === 'token') {
                 fullText += event.text;
-                streamPre.textContent = fullText;
-                maybeScroll();
+                scheduleFormattedUpdate();
               } else if (event.type === 'done') {
                 const elapsedMs = Date.now() - askStartTime;
                 const elapsedStr = elapsedMs >= 1000 ? (elapsedMs / 1000).toFixed(1) + 's' : elapsedMs + 'ms';
@@ -391,7 +413,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
                   statusText += ' (' + elapsedStr + ')';
                 }
                 statusEl.textContent = statusText;
-                assistantBubble.innerHTML = renderMarkdown(fullText);
+                flushFormatted();
                 // Defer Prism so DOM is fully updated; use highlightAllUnder for container
                 requestAnimationFrame(() => {
                   if (typeof Prism !== 'undefined') {
