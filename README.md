@@ -11,6 +11,8 @@ Legacy Lens is a RAG-powered assistant for the original Doom (1993) C source cod
 - **Hybrid search** — Combines vector similarity (embeddings) with full-text search for better retrieval.
 - **Interactive & Deep modes** — Interactive for fast queries; Deep expands the query and retrieves more context for complex questions.
 
+**Example eval report:** [eval-report.md](eval-report.md)
+
 ## Tech stack
 
 - **Vector DB:** pgvector (Postgres)
