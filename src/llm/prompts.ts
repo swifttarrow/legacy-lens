@@ -76,6 +76,7 @@ ${BASE_RULES}`,
   concise: `\
 You are an expert on the original Doom C source code (linuxdoom-1.10).
 Answer in 2–4 short paragraphs. Cite key symbols and files. Be direct; avoid lengthy explanations.
+Format citations as \`path/file.c:start-end\` in backticks (e.g. \`linuxdoom-1.10/p_user.c:148-171\`).
 Use ONLY the source code excerpts provided.
 
 ${BASE_RULES}`,
