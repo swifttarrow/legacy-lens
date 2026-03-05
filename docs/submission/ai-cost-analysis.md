@@ -1,6 +1,6 @@
 # AI Cost Analysis — Legacy Lens
 
-> **Pricing verified:** March 2025. Check [platform.openai.com](https://platform.openai.com/docs/pricing) for current rates.
+> **Pricing verified:** March 2025. OpenAI: [platform.openai.com](https://platform.openai.com/docs/pricing). Claude: [claude.com/pricing](https://claude.com/pricing). Cursor: [cursor.com/pricing](https://www.cursor.com/en/pricing).
 
 ## Assumptions
 
@@ -73,14 +73,40 @@ Ingest is effectively free. The entire Doom corpus costs less than 2 cents to em
 
 ---
 
-## Total Development Spend (Estimated)
+## Development Tools Spend (Claude + Cursor, March 2025)
 
-| Category | Estimated spend |
+| Tool | Plan | Monthly cost | Notes |
+|---|---|---|---|
+| **Claude** | Pro | $20 ($17 annual) | Chat, Code, Cowork; usage limits apply |
+| **Claude** | Max 5x / Max 20x | $100+ / $200+ | Higher usage tiers |
+| **Cursor** | Pro | $20 | Includes ~$20 frontier model usage at API pricing; unlimited Tab completions |
+| **Cursor** | Pro+ | $60 | 3× usage multiplier |
+| **Cursor** | Ultra | $200 | 20× usage multiplier |
+
+### Actual Usage — March 2025 (3 days, prorated)
+
+Prorated from monthly subscription: `(3 ÷ 31) × monthly cost`.
+
+| Category | Monthly | Prorated (3 days) | Notes |
+|---|---|---|---|
+| Claude (claude.ai / Claude Code) | $21.32 | **$2.06** | Pro subscription |
+| Cursor (IDE) | $200 | **$19.35** | Ultra subscription |
+| **Development tools subtotal** | | **$21.41** | |
+
+---
+
+## Total Development Spend (March 2025, 3 days)
+
+| Category | Spend |
 |---|---|
+| Claude (prorated) | $2.06 |
+| Cursor (prorated) | $19.35 |
 | Embedding ingests (multiple re-runs during dev) | ~$0.10 |
-| LLM calls during development and testing | ~$1.00 |
-| Railway (Postgres + Node, ~1 month) | ~$15 |
-| **Total** | **~$16** |
+| OpenAI LLM calls during development and testing | ~$1.00 |
+| Railway (Postgres + Node) | $0 |
+| **Total** | **~$22.50** |
+
+*Railway: free tier; no infrastructure cost.*
 
 ---
 
