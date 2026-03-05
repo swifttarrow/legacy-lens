@@ -333,6 +333,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
       queryEl.value = '';
 
       let fullText = '';
+      let lastChunks = [];
       let lastScrollTime = 0;
       let lastFormatTime = 0;
       let formatTimeoutId = null;
@@ -350,7 +351,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
           clearTimeout(formatTimeoutId);
           formatTimeoutId = null;
         }
-        assistantBubble.innerHTML = renderMarkdown(fullText);
+        assistantBubble.innerHTML = renderMarkdown(fullText, lastChunks);
         maybeScroll();
       }
       function scheduleFormattedUpdate() {
@@ -363,7 +364,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
           formatTimeoutId = setTimeout(() => {
             formatTimeoutId = null;
             lastFormatTime = Date.now();
-            assistantBubble.innerHTML = renderMarkdown(fullText);
+            assistantBubble.innerHTML = renderMarkdown(fullText, lastChunks);
             maybeScroll();
           }, FORMAT_THROTTLE_MS - (now - lastFormatTime));
         }
@@ -398,7 +399,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
               if (event.type === 'retrieved') {
                 statusEl.textContent = 'Retrieved ' + event.count + ' chunk' + (event.count === 1 ? '' : 's') + '. Generating answer\\u2026';
-                renderChunksPanel(event.chunks || [], event.count);
+                lastChunks = event.chunks || [];
+                renderChunksPanel(lastChunks, event.count);
               } else if (event.type === 'ttft') {
                 const ttftStr = event.ms >= 1000 ? (event.ms / 1000).toFixed(1) + 's' : event.ms + 'ms';
                 statusEl.textContent = 'First token in ' + ttftStr + ' \\u2026';
@@ -510,9 +512,20 @@ export const HTML_PAGE = `<!DOCTYPE html>
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    // ── Path resolution for GitHub links ────────────────────────────────────────
+    // LLM may cite shortened paths (e.g. d_main.c); resolve to full path from chunks.
+    function resolveFilePath(filePath, chunks) {
+      if (!filePath || filePath.indexOf('/') >= 0) return filePath;
+      if (!chunks || !chunks.length) return filePath;
+      const found = chunks.find(function(c) {
+        return c.file_path === filePath || c.file_path.endsWith('/' + filePath);
+      });
+      return found ? found.file_path : filePath;
+    }
+
     // ── Inline markdown renderer ───────────────────────────────────────────────
     // Citations: \`path/file.c:start-end\`  →  link that opens file modal
-    function renderInline(text) {
+    function renderInline(text, chunks) {
       let s = escHtml(text);
 
       s = s.replace(
@@ -521,8 +534,9 @@ export const HTML_PAGE = `<!DOCTYPE html>
           var colonIdx = citation.lastIndexOf(':');
           var filePath = citation.slice(0, colonIdx);
           var startLine = citation.slice(colonIdx + 1).split('-')[0];
-          var ghUrl = 'https://github.com/id-Software/DOOM/blob/master/' + filePath + '#L' + startLine;
-          return '<a href="' + ghUrl + '" class="citation" data-path="' + filePath + '" data-line="' + startLine + '">' + citation + '</a>';
+          var resolved = resolveFilePath(filePath, chunks);
+          var ghUrl = 'https://github.com/id-Software/DOOM/blob/master/' + resolved + '#L' + startLine;
+          return '<a href="' + ghUrl + '" class="citation" data-path="' + resolved + '" data-line="' + startLine + '">' + citation + '</a>';
         }
       );
 
@@ -562,7 +576,8 @@ export const HTML_PAGE = `<!DOCTYPE html>
     }
 
     // ── Block markdown renderer ───────────────────────────────────────────────
-    function renderMarkdown(text) {
+    function renderMarkdown(text, chunks) {
+      chunks = chunks || [];
       const lines = text.split('\\n');
       let html = '';
       let inList = false;
@@ -602,7 +617,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
         if (hm) {
           closeList();
           const lvl = hm[1].length;
-          html += '<h' + lvl + '>' + renderInline(hm[2]) + '</h' + lvl + '>';
+          html += '<h' + lvl + '>' + renderInline(hm[2], chunks) + '</h' + lvl + '>';
           continue;
         }
 
@@ -610,7 +625,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
         const lm = line.match(/^(?:\\d+\\.|-|\\*)\\s+(.*)/);
         if (lm) {
           if (!inList) { html += '<ul>'; inList = true; }
-          html += '<li>' + renderInline(lm[1]) + '</li>';
+          html += '<li>' + renderInline(lm[1], chunks) + '</li>';
           continue;
         }
 
@@ -621,7 +636,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
           continue;
         }
 
-        html += '<p>' + renderInline(line.trim()) + '</p>';
+        html += '<p>' + renderInline(line.trim(), chunks) + '</p>';
       }
 
       // Close any unclosed fenced block
