@@ -101,7 +101,7 @@ export async function* answerStream(
       { role: "user", content: userContent },
     ],
     stream: true,
-    ...(mode === "concise" && { max_tokens: 128 }),
+    ...(mode === "concise" && { max_tokens: 512 }),
   });
 
   for await (const event of stream) {
