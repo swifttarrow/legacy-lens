@@ -5,6 +5,29 @@ import type { AnswerMode } from "./prompts.js";
 
 const CHAT_MODEL = "gpt-4.1-nano";
 
+/** Canned response when prompt injection is detected. Keeps assistant in-scope. */
+const INJECTION_DECLINE =
+  "I'm a Doom source-code assistant. I can only answer questions about the original Doom C codebase. What would you like to know about the code?";
+
+/** Patterns that indicate prompt injection or jailbreak attempts (case-insensitive). */
+const INJECTION_PATTERNS = [
+  /\bignore\s+(all\s+)?(previous|prior)\s+instructions?\b/i,
+  /\bdisregard\s+(your\s+)?instructions?\b/i,
+  /\bforget\s+(you'?re|that\s+you'?re)\s+/i,
+  /\bfrom\s+now\s+on\s+you\s+will\s+only\s+respond\s+with\b/i,
+  /\brespond\s+(only\s+)?with\s+(the\s+word\s+)?['"]?\w+['"]?\s*\.?\s*$/im,
+  /\byou\s+are\s+now\s+(a|in)\s+/i,
+  /\boutput\s+(your\s+)?(system\s+)?prompt\b/i,
+  /\boutput\s+only\s+(the\s+word\s+)?['"]?\w+['"]?\b/i,
+  /\bdebug\s+mode\b.*\bapi\s+keys?\b/i,
+];
+
+function looksLikeInjection(query: string): boolean {
+  const trimmed = query.trim();
+  if (trimmed.length < 20) return false; // Very short queries unlikely to be injection
+  return INJECTION_PATTERNS.some((re) => re.test(query));
+}
+
 // Truncate very long chunk bodies to keep per-call cost reasonable.
 // gpt-4.1-nano has a 128K context window but dense C tables can be huge.
 const MAX_CHUNK_CHARS = 2_000;
@@ -50,6 +73,11 @@ export async function* answerStream(
   mode: AnswerMode = "explain",
   history: HistoryMessage[] = [],
 ): AsyncGenerator<string> {
+  if (looksLikeInjection(query)) {
+    yield INJECTION_DECLINE;
+    return;
+  }
+
   const allowedFiles = chunks.length > 0
     ? [...new Set(chunks.map((c) => c.file_path))].join(", ")
     : "";
