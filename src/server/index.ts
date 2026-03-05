@@ -179,7 +179,7 @@ function isSafeFilePath(filePath: string): boolean {
 async function handleFile(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const rawUrl = req.url ?? "/";
   const parsedUrl = new URL(rawUrl, "http://localhost");
-  const filePath = parsedUrl.searchParams.get("path");
+  const filePath = (parsedUrl.searchParams.get("path") ?? "").trim();
 
   if (!filePath) {
     res.writeHead(400, { "Content-Type": "application/json" });

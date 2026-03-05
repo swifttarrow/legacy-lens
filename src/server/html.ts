@@ -472,6 +472,7 @@ export const HTML_PAGE = `<!DOCTYPE html>
 
     // ── File modal ─────────────────────────────────────────────────────────────
     async function openFileModal(filePath, startLine) {
+      filePath = (filePath || '').trim();
       if (!filePath) return;
       fileModalTitle.textContent = filePath + (startLine ? ':' + startLine : '');
       fileModalCode.textContent = 'Loading\\u2026';
@@ -518,9 +519,10 @@ export const HTML_PAGE = `<!DOCTYPE html>
       if (!filePath || filePath.indexOf('/') >= 0) return filePath;
       if (!chunks || !chunks.length) return filePath;
       const found = chunks.find(function(c) {
-        return c.file_path === filePath || c.file_path.endsWith('/' + filePath);
+        var cp = (c.file_path || '').trim();
+        return cp === filePath || cp.endsWith('/' + filePath);
       });
-      return found ? found.file_path : filePath;
+      return found ? (found.file_path || '').trim() : filePath;
     }
 
     // ── Inline markdown renderer ───────────────────────────────────────────────
