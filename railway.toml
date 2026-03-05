@@ -12,3 +12,5 @@ restartPolicyMaxRetries = 5
 #   DATABASE_URL   — Railway Postgres connection string
 #   OPENAI_API_KEY — OpenAI API key
 # PORT is set automatically by Railway.
+#
+# DOOM_REPO_DIR is set in Dockerfile (/app/doom) — no action needed.
