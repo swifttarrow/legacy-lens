@@ -2,8 +2,8 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Install pnpm and git (for cloning DOOM repo)
-RUN apt-get update -qq && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/* && npm install -g pnpm
+# Install pnpm, git, and ca-certificates (for cloning DOOM repo over HTTPS)
+RUN apt-get update -qq && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/* && npm install -g pnpm
 
 # Clone DOOM source (baked in for /api/file serving in production)
 RUN git clone --depth 1 https://github.com/id-Software/DOOM.git /app/doom
